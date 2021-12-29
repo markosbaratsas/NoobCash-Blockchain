@@ -1,4 +1,4 @@
-import binascii
+from binascii import hexlify
 
 import Crypto
 import Crypto.Random
@@ -13,16 +13,22 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 
-
-class wallet:
-
-	def __init__():
-		##set
-
-		#self.public_key
-		#self.private_key
-		#self_address
-		#self.transactions
-
-	def balance():
-
+class Wallet:
+    
+    def __init__(self):
+        self.public_key, self.private_key = self.generateKeys()
+        self_address = self.public_key
+        self.transactions
+    
+    def generateKeys(self):
+        random_gen = Crypto.Random.new().read
+        private_key = RSA.generate(1024, random_gen)
+        public_key = private_key.publickey()
+        
+        private_key = hexlify(private_key.exportKey(format='DER')).decode('ascii')
+        public_key = hexlify(public_key.exportKey(format='DER')).decode('ascii')
+        
+        return private_key, public_key
+    
+    def balance():
+        pass
