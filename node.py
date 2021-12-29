@@ -1,7 +1,7 @@
 import block
 import wallet
 
-class node:
+class Node:
 	def __init__():
 		self.NBC=100;
 		##set
