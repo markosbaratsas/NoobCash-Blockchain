@@ -21,9 +21,9 @@ class TransactionOutput:
         self.transaction_id = transaction_id
         self.recipient_address = recipient_address
         self.amount = amount
-        self.id = self.__myHash()
+        self.id = self.__my_hash()
 
-    def __myHash(self):
+    def __my_hash(self):
         obj = OrderedDict({
             "transaction_id": self.transaction_id,
             "recipient_address": self.recipient_address,
@@ -62,11 +62,11 @@ class Transaction:
         # self.signature = PKCS1_v1_5.new(RSA.\
         #     importKey(unhexlify(sender_private_key)))
         self.signature = PKCS1_v1_5.new(sender_private_key)
-        self.transaction_id = self.__myHash()
+        self.transaction_id = self.__my_hash()
         self.transaction_outputs = self.\
             generate_transaction_outputs(transaction_inputs)
 
-    def __myHash(self) -> str:
+    def __my_hash(self) -> str:
         """Private function used to generate transaction's hash
 
         Returns:

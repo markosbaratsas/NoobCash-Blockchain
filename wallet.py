@@ -1,16 +1,16 @@
 from binascii import hexlify
-
 import Crypto
 import Crypto.Random
 from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-
 import hashlib
 import json
 from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
+
+from transaction import TransactionOutput
 
 
 class Wallet:
@@ -18,7 +18,7 @@ class Wallet:
     def __init__(self):
         self.public_key, self.private_key = self.generateKeys()
         self.address = self.public_key
-        self.transactions = []
+        self.unspent_transactions = []
     
     def generateKeys(self):
         random_gen = Crypto.Random.new().read
@@ -30,5 +30,5 @@ class Wallet:
         
         return private_key, public_key
     
-    def balance():
-        pass
+    def balance(self):
+        return sum([x.amount for x in self.unspent_transactions])

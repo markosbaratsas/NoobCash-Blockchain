@@ -12,24 +12,24 @@ class Block:
     block nonce, etc.
     """
 
-    def __init__(self, index: int, nonce: str, previousHash: str):
+    def __init__(self, index: int, nonce: str, previous_hash: str):
         """Block constructor: Inititalize a Block using given parameters
 
         Args:
             index (int): Block index (block serial number)
             nonce (str): Block nonce
-            previousHash (str): Previous block's hash
+            previous_hash (str): Previous block's hash
         """
         self.index = index
         self.timestamp = time()
-        self.listOfTransactions = []
+        self.list_of_transactions = []
         self.nonce = nonce
-        self.previousHash = previousHash
-        self.hash = self.__myHash()
+        self.previous_hash = previous_hash
+        self.hash = self.__my_hash()
         
         return self
 
-    def __myHash(self):
+    def __my_hash(self):
         """Private function used to generate block's hash
 
         Returns:
@@ -37,7 +37,7 @@ class Block:
         """
         obj = {
             "index": self.index,
-            "listOfTransactions": self.listOfTransactions
+            "list_of_transactions": self.list_of_transactions
         }
         return hashlib.sha256(obj.dumps.encode('utf-8')).hexdigest()
     
@@ -50,6 +50,6 @@ class Block:
         Returns:
             block (Block): The current block after the transaction insertion
         """
-        self.listOfTransactions.append(transaction)
-        self.hash = self.__myHash()
+        self.list_of_transactions.append(transaction)
+        self.hash = self.__my_hash()
         return self
