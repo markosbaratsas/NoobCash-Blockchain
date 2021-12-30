@@ -17,8 +17,8 @@ class Wallet:
     
     def __init__(self):
         self.public_key, self.private_key = self.generateKeys()
-        self_address = self.public_key
-        self.transactions
+        self.address = self.public_key
+        self.transactions = []
     
     def generateKeys(self):
         random_gen = Crypto.Random.new().read
