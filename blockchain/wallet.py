@@ -10,7 +10,7 @@ from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
 
-from transaction import TransactionOutput
+from .transaction import TransactionOutput
 
 
 class Wallet:

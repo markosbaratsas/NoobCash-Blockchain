@@ -1,9 +1,9 @@
 import hashlib
 from json import dumps
 from time import time
+from typing import List
 
-import blockchain
-from transaction import Transaction
+from .transaction import Transaction
 
 
 class Block:
@@ -12,7 +12,7 @@ class Block:
     block nonce, etc.
     """
 
-    def __init__(self, index: int, nonce: str, previous_hash: str):
+    def __init__(self, index: int, nonce: int, previous_hash: str):
         """Block constructor: Inititalize a Block using given parameters
 
         Args:
@@ -26,9 +26,18 @@ class Block:
         self.nonce = nonce
         self.previous_hash = previous_hash
         self.hash = self.__my_hash()
-        
+
         return self
 
+    def set_nonce(self, nonce: int):
+        """Set nonce and update block's hash
+
+        Args:
+            nonce (int): The new nonce
+        """
+        self.nonce = nonce
+        self.hash = self.__my_hash()
+        
     def __my_hash(self):
         """Private function used to generate block's hash
 
@@ -37,11 +46,14 @@ class Block:
         """
         obj = {
             "index": self.index,
-            "list_of_transactions": self.list_of_transactions
+            "timestamp": self.timestamp,
+            "list_of_transactions": self.list_of_transactions,
+            "nonce": self.nonce,
+            "previous_hash": self.previous_hash
         }
         return hashlib.sha256(obj.dumps.encode('utf-8')).hexdigest()
-    
-    def add_transaction(self, transaction: Transaction):
+
+    def add_transactions_to_block(self, transactions: List[Transaction]):
         """Add Transaction to block's list of transactions
 
         Args:
@@ -50,6 +62,7 @@ class Block:
         Returns:
             block (Block): The current block after the transaction insertion
         """
-        self.list_of_transactions.append(transaction)
+        for transaction in transactions:
+            self.list_of_transactions.append(transaction)
         self.hash = self.__my_hash()
         return self

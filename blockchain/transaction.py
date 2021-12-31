@@ -11,8 +11,7 @@ from Crypto.Signature import PKCS1_v1_5
 
 import requests
 from flask import Flask, jsonify, request, render_template
-from typing import List
-
+from typing import List, Optional
 
 
 class TransactionOutput:
@@ -32,25 +31,29 @@ class TransactionOutput:
         return hashlib.sha256(obj.dumps.encode('utf-8')).hexdigest()
 
 
-
 class Transaction:
     """Transaction: Contains the transaction amount, along with
     other useful transaction data such as sender's address, receiver's
     address, etc.
     """
 
-    def __init__(self, sender_address: str, sender_private_key: str, \
-            recipient_address: str, amount: int, \
-            transaction_inputs: List[TransactionOutput]) -> None:
+    def __init__(self, sender_address: str, sender_private_key: Optional[str],\
+            recipient_address: str, amount: int,\
+            transaction_inputs: List[TransactionOutput],
+            signature: Optional[str]) -> None:
         """Initialize Transaction
 
         Args:
             sender_address (str): Sender's wallet public key
-            sender_private_key (str): Sender's wallet private key
+            sender_private_key (str): Sender's wallet private key. Given by
+                transaction sender when new transaction needs to be created.
+                Given when transaction `signature` is not given
             recipient_address (str): Recipient's wallet private key
             amount (int): Amount to be sent through transaction
             transaction_inputs (List[TransactionOutput]): List of transaction
                 inputs
+            signature (str): Transaction signature, which is given if
+                `sender_private_key`variable is not given
 
         Returns:
             None
@@ -59,9 +62,12 @@ class Transaction:
         self.receiver_address = recipient_address
         self.amount = amount
         self.transaction_inputs = [x.id for x in transaction_inputs]
-        # self.signature = PKCS1_v1_5.new(RSA.\
-        #     importKey(unhexlify(sender_private_key)))
-        self.signature = PKCS1_v1_5.new(sender_private_key)
+        if signature:
+            self.signature = signature
+        else:
+            # self.signature = PKCS1_v1_5.new(RSA.\
+            #     importKey(unhexlify(sender_private_key)))
+            self.signature = PKCS1_v1_5.new(sender_private_key)
         self.transaction_id = self.__my_hash()
         self.transaction_outputs = self.\
             generate_transaction_outputs(transaction_inputs)
@@ -119,7 +125,7 @@ class Transaction:
 
     # https://gist.github.com/cevaris/e003cdeac4499d225f06
     # https://pycryptodome.readthedocs.io/en/latest/src/signature/pkcs1_v1_5.html
-    def sign_transaction(self) -> bytes:
+    def sign_transaction(self) -> str:
         """Sign transaction with private key
 
         Args:
@@ -130,4 +136,19 @@ class Transaction:
         """
         str_dict = SHA.new(str(self.to_dict()).encode('utf8'))
         return hexlify(self.signature.sign(str_dict)).decode('ascii')
-       
+
+    def verify_transaction(self) -> bool:
+        """Verify transaction by checking transaction signature with sender's
+        private key
+
+        Returns:
+            bool: True if verified else False
+        """
+        public_key = RSA.importKey(self.sender_address)
+        verifier = PKCS1_v1_5.new(public_key)
+        str_dict = SHA.new(str(self.to_dict()).encode('utf8'))
+        
+        if verifier.verify(str_dict, unhexlify(self.signature)):
+            return True
+
+        return False
