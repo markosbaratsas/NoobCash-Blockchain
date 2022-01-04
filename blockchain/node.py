@@ -4,7 +4,7 @@ from typing import List
 from .block import Block
 from .blockchain import Blockchain
 from .wallet import Wallet
-from .transaction import Transaction, TransactionOutput
+from .transaction import Transaction
 
 
 class RingNode:

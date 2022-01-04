@@ -1,7 +1,6 @@
 import requests
-import threading
 
-from blockchain import Node, RingNode, Block, Transaction
+from blockchain import Node, RingNode, Block, Transaction, TransactionOutput
 
 
 def non_bootstrap_node(node: Node, port: str):
@@ -27,6 +26,8 @@ def bootstrap_node(node: Node, number_of_nodes: str):
         node (Node): The bootstrap node to be initialized
         number_of_nodes (int): The number of the nodes of the system
     """
+    new_node = RingNode(0, "127.0.0.1:5000", "127.0.0.1:5000", [])
+    node.register_node_to_ring(new_node)
     node.blockchain.last_block = Block(0, 0, 1)
     transaction = Transaction(0, 0, node.wallet.address, 100*number_of_nodes,\
         [])
