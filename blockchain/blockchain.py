@@ -14,8 +14,7 @@ class Blockchain:
             difficulty (str): The number of zeros to be found during mining
         """
         self.blockchain = {}
-        genesis_block = Block(0, 0, 1)
-        self.last_block = genesis_block
+        self.last_block = None
         self.transactions = []
         self.capacity = capacity
         self.difficulty = difficulty

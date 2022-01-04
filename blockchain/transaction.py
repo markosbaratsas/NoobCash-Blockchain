@@ -100,6 +100,8 @@ class Transaction:
                 outputs
         """
         sender_amount = sum([x.amount for x in transaction_inputs]) - self.amount
+        if not transaction_inputs: # this is for the initial transaction of the genesis block of the bootstrap node
+            sender_amount = self.amount
         receiver_transaction_output = TransactionOutput(self.transaction_id, \
             self.receiver_address, self.amount)
         sender_transaction_output = TransactionOutput(self.transaction_id, \

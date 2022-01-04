@@ -1,17 +1,15 @@
-import requests
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+import requests
 import sys
-from helper import non_bootstrap_node, bootstrap_node
+import threading
 
 from blockchain import Node, RingNode
+from helper import non_bootstrap_node, bootstrap_node
 
 this_node = None
 number_nodes = None
-
-### JUST A BASIC EXAMPLE OF A REST API WITH FLASK
-
-
+found_nonce = threading.Event
 
 app = Flask(__name__)
 CORS(app)
@@ -26,20 +24,40 @@ CORS(app)
 
 @app.route('/transactions/', methods=['GET'])
 def get_transactions():
-    # transactions = blockchain.transactions
+    """Endpoint to get last valid block's transactions.
 
-    response = {'transactions': "transactions"}
+    Returns:
+        Response, int: The response with the list of transactions, along with
+        the HTTP status
+    """
+    response = {'transactions':\
+                this_node.blockchain.last_block.list_of_transactions}
     return jsonify(response), 200
 
 @app.route('/new_transaction', methods=['POST'])
 def add_transaction():
-    # data = request.form.data
-    response = request.json
-    print(this_node.index)
-    print(type(jsonify(response)))
-    return jsonify(response), 200
+    """Endpoint to create a new transaction by a node. Checks if the node
+    has enough coins to make the transaction, and if it does the function
+    also broadcasts the transaction to every other node by hitting the
+    /add_broadcasted_transaction endpoint,
 
-@app.route('/add-node/', methods=['GET'])
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    new_transaction = request.json
+    receiver = new_transaction["receiver"]
+    amount = new_transaction["amount"]
+    transaction = this_node.create_transaction(receiver, amount)
+    if transaction == None:
+        return jsonify({'error': 'Not enough coins to make transaction'}), 501
+    for ring_node in this_node.ring:
+        # add error checking
+        requests.post(f"http://{ring_node.address}/add_broadcasted_transaction/", json={
+            "transaction": transaction
+        })
+    return jsonify({}), 200
+
+@app.route('/add_node/', methods=['POST'])
 def add_node():
     """Endpoint to be used by bootstrap node. When new node is up, inform
     bootstrap node by hitting this endpoint.
@@ -55,6 +73,49 @@ def add_node():
                     [])
     this_node.register_node_to_ring(new_node)
     return jsonify({}), 200
+
+@app.route('/add_broadcasted_transaction', methods=['POST'])
+def add_broadcasted_transaction():
+    """Endpoint to add a broadcasted transaction made by another node.
+    Validates the transaction, using the validate_transaction function of the
+    node class, and adds it to the blockchain. If the node starts mining and
+    finds a nonce, before the /found_nonce endpoint is hit by another node
+    the found nonce is broadcasted to the other nodes.
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    broadcasted_transaction = request.json["transaction"]
+    validated = this_node.validate_transaction(broadcasted_transaction)
+    if not validated:
+        return jsonify({'error': 'Transaction not valid'}), 502
+
+    nonce = this_node.add_transaction(broadcasted_transaction, found_nonce)
+    if nonce != -1:
+        for ring_node in this_node.ring:
+            requests.post(f"http://{ring_node.address}/found_nonce/", json={
+                "blockchain": this_node.blockchain
+            })
+    return jsonify({}), 200
+
+@app.route('/found_nonce', methods=['POST'])
+def found_nonce():
+    """Endpoint to to be hit when a node completes mining and broadcasts its
+    blockchain. Sets the found_nonce threading event's flag, to stop any
+    ongoing mining done by the node at the moment. If the broadcasted
+    blockchain is larger, it replaces the node's current blockchain. The
+    threading event's flag is restarted.
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    found_nonce.set()
+    blockchain = request.json["blockchain"]
+    if len(this_node.blockchain.blockchain) < len(blockchain.blockchain):
+        this_node.blockchain = blockchain
+    found_nonce.clear()
+    return jsonify({}), 200
+
 
 
 
@@ -94,14 +155,9 @@ if __name__ == '__main__':
 
     # non-bootstrap nodes execute this
     if this_node.index != 0:
-        non_bootstrap_node(this_node)
-        requests.get("http://127.0.0.1:5000/add-node/", json={
-            "index": index,
-            "address": f"127.0.0.1:{port}",
-            "public_key": f"127.0.0.1:{port}"
-        })
+        non_bootstrap_node(this_node, port)
     else:
-        bootstrap_node(this_node)
+        bootstrap_node(this_node, number_nodes)
 
 
     app.run(host='127.0.0.1', port=port)
