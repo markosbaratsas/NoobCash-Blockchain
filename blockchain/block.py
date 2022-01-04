@@ -27,8 +27,6 @@ class Block:
         self.previous_hash = previous_hash
         self.hash = self.__my_hash()
 
-        return self
-
     def set_nonce(self, nonce: int):
         """Set nonce and update block's hash
 
@@ -51,7 +49,7 @@ class Block:
             "nonce": self.nonce,
             "previous_hash": self.previous_hash
         }
-        return hashlib.sha256(obj.dumps.encode('utf-8')).hexdigest()
+        return hashlib.sha256(dumps(obj, sort_keys=True).encode('utf-8')).hexdigest()
 
     def add_transactions_to_block(self, transactions: List[Transaction]):
         """Add Transaction to block's list of transactions

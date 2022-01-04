@@ -9,8 +9,9 @@ class Blockchain:
     def __init__(self, capacity, difficulty):
         """Initialize the Blockchain
 
-        Returns:
-            blockchain (Blockchain): Blockchain with the genesis block
+        Args:
+            capacity (int): Blockchain's block capacity
+            difficulty (str): The number of zeros to be found during mining
         """
         self.blockchain = {}
         genesis_block = Block(0, 0, 1)
@@ -18,7 +19,6 @@ class Blockchain:
         self.transactions = []
         self.capacity = capacity
         self.difficulty = difficulty
-        return self
 
     def add_new_block(self, block: Block):
         """Add new block to blockchain. Insert into the `self.blockchain` dict
