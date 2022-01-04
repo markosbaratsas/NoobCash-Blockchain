@@ -13,14 +13,7 @@ found_nonce = threading.Event
 
 app = Flask(__name__)
 CORS(app)
-# blockchain = Blockchain()
 
-
-#.......................................................................................
-
-
-
-# get all transactions in the blockchain
 
 @app.route('/transactions/', methods=['GET'])
 def get_transactions():
@@ -50,17 +43,28 @@ def add_transaction():
     transaction = this_node.create_transaction(receiver, amount)
     if transaction == None:
         return jsonify({'error': 'Not enough coins to make transaction'}), 501
-    for ring_node in this_node.ring:
+
+    for node in this_node.ring:
         # add error checking
-        requests.post(f"http://{ring_node.address}/add_broadcasted_transaction/", json={
-            "transaction": transaction
-        })
+        requests.post(f"http://{node.address}/add_broadcasted_transaction/",\
+            json={"transaction": transaction
+            })
+
+    nonce = this_node.add_transaction(transaction, found_nonce)
+    if nonce != -1:
+        for ring_node in this_node.ring:
+            requests.post(f"http://{ring_node.address}/found_nonce/", json={
+                "blockchain": this_node.blockchain
+            })
     return jsonify({}), 200
 
 @app.route('/add_node/', methods=['POST'])
 def add_node():
     """Endpoint to be used by bootstrap node. When new node is up, inform
-    bootstrap node by hitting this endpoint.
+    bootstrap node by hitting this endpoint. Everytime a new node is
+    registered, bootstrap send it 100 coins by creating and broadcasting a
+    new transaction. When all nodes are registered, bootstrap node broadcasts
+    its blockchain and ring.
 
     Returns:
         Response, int: The response, along with the HTTP status
@@ -72,6 +76,30 @@ def add_node():
                     new_node["public_key"],
                     [])
     this_node.register_node_to_ring(new_node)
+    transaction = this_node.create_transaction(new_node["address"], 100)
+    this_node.add_transaction(transaction, found_nonce)
+
+    if len(this_node.ring) == number_nodes:
+        for node in this_node.ring:
+            requests.post(f"http://{node.address}/receive_blockchain_and_ring/", json={
+                "blockchain": this_node.blockchain,
+                "ring": this_node.ring
+            })
+
+    return jsonify({}), 200
+
+@app.route('/receive_blockchain_and_ring', methods=['POST'])
+def receive_blockchain_and_ring():
+    """Endpoint to add broadcasted by the bootstrap node blockchain and ring,
+    when all of the nodes are inserted to the system.
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    blockchain = request.json["blockchain"]
+    ring = request.json["ring"]
+    this_node.blockchain = blockchain
+    this_node.ring = ring
     return jsonify({}), 200
 
 @app.route('/add_broadcasted_transaction', methods=['POST'])
@@ -123,11 +151,16 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('-p', '--port', default=-1, type=int, help='Port to listen on')
-    parser.add_argument('-i', '--index', default=-1, type=int, help='Index of node')
-    parser.add_argument('-c', '--capacity', default=-1, type=int, help='Blockchain capacity')
-    parser.add_argument('-d', '--difficulty', default=-1, type=int, help='Blockchain difficulty')
-    parser.add_argument('-n', '--number_nodes', default=-1, type=int, help='The total number of nodes')
+    parser.add_argument('-p', '--port', default=-1, type=int, help=\
+        'Port to listen on')
+    parser.add_argument('-i', '--index', default=-1, type=int, help=\
+        'Index of node')
+    parser.add_argument('-c', '--capacity', default=-1, type=int, help=\
+        'Blockchain capacity')
+    parser.add_argument('-d', '--difficulty', default=-1, type=int, help=\
+        'Blockchain difficulty')
+    parser.add_argument('-n', '--number_nodes', default=-1, type=int, help=\
+        'The total number of nodes')
     args = parser.parse_args()
     port = args.port
     index = args.index
