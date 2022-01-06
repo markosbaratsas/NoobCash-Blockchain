@@ -30,9 +30,9 @@ def bootstrap_node(node: Node, number_of_nodes: str):
     node.register_node_to_ring(new_node)
     node.blockchain.last_block = Block(0, 0, 1)
     transaction = Transaction(0, 0, node.wallet.address, 100*number_of_nodes,\
-        [])
+        [], "00")
     node.blockchain.last_block.add_transactions_to_block([transaction])
-    new_block = Block(node.blockchainlast_block.index+1, 0,\
+    new_block = Block(node.blockchain.last_block.index+1, 0,\
         node.blockchain.last_block.hash)
     node.blockchain.add_new_block(new_block)
     pass

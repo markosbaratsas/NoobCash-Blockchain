@@ -168,7 +168,7 @@ if __name__ == '__main__':
     capacity = args.capacity
     number_nodes = args.number_nodes
     
-    if port == -1:
+    if index != 0 and port == -1:
         print("Please provide port number")
         sys.exit(1)
     if index == -1:
@@ -191,6 +191,7 @@ if __name__ == '__main__':
         non_bootstrap_node(this_node, port)
     else:
         bootstrap_node(this_node, number_nodes)
+        port = 5000
 
 
     app.run(host='127.0.0.1', port=port)

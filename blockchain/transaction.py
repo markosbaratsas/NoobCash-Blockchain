@@ -8,7 +8,7 @@ import Crypto.Random
 from Crypto.Hash import SHA
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-
+from json import dumps
 import requests
 from flask import Flask, jsonify, request, render_template
 from typing import List, Optional
@@ -23,12 +23,12 @@ class TransactionOutput:
         self.id = self.__my_hash()
 
     def __my_hash(self):
-        obj = OrderedDict({
+        obj = {
             "transaction_id": self.transaction_id,
             "recipient_address": self.recipient_address,
             "amount": self.amount
-        })
-        return hashlib.sha256(obj.dumps.encode('utf-8')).hexdigest()
+        }
+        return hashlib.sha256(dumps(obj).encode('utf8')).hexdigest()
 
 
 class Transaction:
@@ -40,7 +40,7 @@ class Transaction:
     def __init__(self, sender_address: str, sender_private_key: Optional[str],\
             recipient_address: str, amount: int,\
             transaction_inputs: List[TransactionOutput],
-            signature: Optional[str]) -> None:
+            signature: Optional[str] = None) -> None:
         """Initialize Transaction
 
         Args:
@@ -78,14 +78,14 @@ class Transaction:
         Returns:
             hash (str): Transaction's hash
         """
-        obj = OrderedDict({
+        obj = {
             "sender_address": self.sender_address,
             "receiver_address": self.receiver_address,
             "amount": self.amount,
             "transaction_inputs": self.transaction_inputs,
             "signature": self.signature
-        })
-        return hashlib.sha256(obj.dumps.encode('utf-8')).hexdigest()
+        }
+        return hashlib.sha256(dumps(obj).encode('utf8')).hexdigest()
 
     def generate_transaction_outputs(self, \
             transaction_inputs: List[TransactionOutput]) -> None:

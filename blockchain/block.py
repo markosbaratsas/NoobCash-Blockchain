@@ -45,11 +45,11 @@ class Block:
         obj = {
             "index": self.index,
             "timestamp": self.timestamp,
-            "list_of_transactions": self.list_of_transactions,
+            "list_of_transactions": [str(x) for x in self.list_of_transactions],
             "nonce": self.nonce,
             "previous_hash": self.previous_hash
         }
-        return hashlib.sha256(dumps(obj, sort_keys=True).encode('utf-8')).hexdigest()
+        return hashlib.sha256(dumps(obj).encode('utf8')).hexdigest()
 
     def add_transactions_to_block(self, transactions: List[Transaction]):
         """Add Transaction to block's list of transactions
