@@ -4,7 +4,7 @@ import requests
 import sys
 import threading
 
-from blockchain import Node, RingNode
+from blockchain import Node, RingNode, Blockchain, Transaction
 from helper import non_bootstrap_node, bootstrap_node
 
 this_node = None
@@ -24,7 +24,9 @@ def get_transactions():
         the HTTP status
     """
     response = {'transactions':\
-                this_node.blockchain.last_block.list_of_transactions}
+                    [x.to_dict() for x in\
+                    this_node.blockchain.last_block.list_of_transactions]
+                }
     return jsonify(response), 200
 
 @app.route('/new_transaction', methods=['POST'])
@@ -50,7 +52,7 @@ def add_transaction():
             requests.post(f"http://{node.address}\
                 /add_broadcasted_transaction/",\
                 json={
-                    "transaction": transaction
+                    "transaction": transaction.to_dict()
                 })
 
     nonce = this_node.add_transaction(transaction, found_nonce)
@@ -59,7 +61,7 @@ def add_transaction():
             if ring_node.index != this_node.index:
                 requests.post(f"http://{ring_node.address}/found_nonce/",\
                     json={
-                        "blockchain": this_node.blockchain
+                        "blockchain": this_node.blockchain.to_dict()
                     })
     return jsonify({}), 200
 
@@ -90,8 +92,8 @@ def add_node():
                 requests.post(f"http://{node.address}\
                     /receive_blockchain_and_ring/",
                     json={
-                        "blockchain": this_node.blockchain,
-                        "ring": this_node.ring
+                        "blockchain": this_node.blockchain.to_dict(),
+                        "ring": [x.to_dict() for x in this_node.ring]
                     })
 
     return jsonify({}), 200
@@ -104,8 +106,13 @@ def receive_blockchain_and_ring():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    blockchain = request.json["blockchain"]
-    ring = request.json["ring"]
+    blockchain = Blockchain(0, 0)
+    blockchain.parser(request.json["blockchain"])
+    ring = []
+    for node in request.json["ring"]:
+        ring_node = RingNode(0, "", "", [])
+        ring_node.parser(node)
+        ring.append(ring_node)
     this_node.blockchain = blockchain
     this_node.ring = ring
     return jsonify({}), 200
@@ -121,7 +128,8 @@ def add_broadcasted_transaction():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    broadcasted_transaction = request.json["transaction"]
+    broadcasted_transaction = Transaction("", "", "", 0, [])
+    broadcasted_transaction.parser(request.json["transaction"])
     validated = this_node.validate_transaction(broadcasted_transaction)
     if not validated:
         return jsonify({'error': 'Transaction not valid'}), 502
@@ -148,7 +156,8 @@ def found_nonce():
         Response, int: The response, along with the HTTP status
     """
     found_nonce.set()
-    blockchain = request.json["blockchain"]
+    blockchain = Blockchain(0, 0)
+    blockchain.parser(request.json["blockchain"])
     if len(this_node.blockchain.blockchain) < len(blockchain.blockchain):
         this_node.blockchain = blockchain
     found_nonce.clear()
