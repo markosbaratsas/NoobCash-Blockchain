@@ -82,3 +82,22 @@ class Block:
             "previous_hash": self.previous_hash,
             "hash": self.hash
         }
+
+    def parser(self, dictionary: dict) -> None:
+        """Convert dictionary to object
+
+        Args:
+            dictionary (dict): The dictionary to be parsed
+        """
+        list_of_transactions = []
+        for x in dictionary["list_of_transactions"]:
+            transaction = Transaction("", "", "", 0, [])
+            transaction.parser(x)
+            list_of_transactions.append(transaction)
+
+        self.index = dictionary["index"]
+        self.timestamp = dictionary["timestamp"]
+        self.list_of_transactions = list_of_transactions
+        self.nonce = dictionary["nonce"]
+        self.previous_hash = dictionary["previous_hash"]
+        self.hash = dictionary["hash"]

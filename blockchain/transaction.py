@@ -14,7 +14,7 @@ from typing import List, Optional
 
 class TransactionOutput:
 
-    def __init__(self, transaction_id, recipient_address, amount):
+    def __init__(self, transaction_id: int, recipient_address: str, amount: int):
         self.transaction_id = transaction_id
         self.recipient_address = recipient_address
         self.amount = amount
@@ -43,6 +43,17 @@ class TransactionOutput:
             "amount": self.amount,
             "id": self.id
         }
+
+    def parser(self, dictionary: dict) -> None:
+        """Convert dictionary to object
+
+        Args:
+            dictionary (dict): The dictionary to be parsed
+        """
+        self.transaction_id = dictionary["transaction_id"]
+        self.recipient_address = dictionary["recipient_address"]
+        self.amount = dictionary["amount"]
+        self.id = dictionary["id"]
 
 
 class Transaction:
@@ -136,8 +147,33 @@ class Transaction:
             "receiver_address": self.receiver_address,
             "amount": self.amount,
             "transaction_inputs": [x.to_dict() for x in self.transaction_inputs],
-            "transaction_outputs": [x.to_dict() for x in self.transaction_outputs]
+            "transaction_outputs": [x.to_dict() for x in self.transaction_outputs],
+            "signature": str(self.signature)
         }
+
+    def parser(self, dictionary: dict) -> None:
+        """Convert dictionary to object
+
+        Args:
+            dictionary (dict): The dictionary to be parsed
+        """
+        transaction_inputs = []
+        for transaction_input in dictionary["transaction_inputs"]:
+            transaction = TransactionOutput(0, "", 0)
+            transaction.parser(transaction_input)
+            transaction_inputs.append(transaction)
+
+        transaction_outputs = []
+        for transaction_output in dictionary["transaction_outputs"]:
+            transaction = TransactionOutput(0, "", 0)
+            transaction.parser(transaction_output)
+            transaction_outputs.append(transaction)
+
+        self.sender_address = dictionary["sender_address"]
+        self.receiver_address = dictionary["receiver_address"]
+        self.transaction_inputs = transaction_inputs
+        self.transaction_outputs = transaction_outputs
+        self.signature = dictionary["signature"]
 
     # https://gist.github.com/cevaris/e003cdeac4499d225f06
     # https://pycryptodome.readthedocs.io/en/latest/src/signature/pkcs1_v1_5.html

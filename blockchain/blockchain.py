@@ -1,5 +1,6 @@
 from Crypto.Util.number import size
 from .block import Block
+from .transaction import Transaction
 
 class Blockchain:
     """Blockchain: Blockchain that contains dict with blocks and other useful
@@ -50,9 +51,36 @@ class Blockchain:
             blockchain_to_dict[hash] = block.to_dict()
 
         return {
-            "blockchain": self.blockchain_to_dict,
+            "blockchain": blockchain_to_dict,
             "last_block": self.last_block.to_dict,
             "transactions": [x.to_dict() for x in self.transactions],
             "capacity": self.capacity,
             "difficulty": self.difficulty
         }
+
+    def parser(self, dictionary: dict) -> None:
+        """Convert dictionary to object
+
+        Args:
+            dictionary (dict): The dictionary to be parsed
+        """
+        transactions = []
+        for x in dictionary["transactions"]:
+            transaction = Transaction("", "", "", 0, [])
+            transaction.parser(x)
+            transactions.append(transaction)
+
+        last_block = Block(0, 0, "")
+        last_block.parser(dictionary["last_block"])
+
+        blockchain = {}
+        for hash, block in self.blockchain.items():
+            new_block = Block(0, 0, "")
+            new_block.parser(block)
+            blockchain[hash] = new_block
+
+        self.capacity = dictionary["capacity"]
+        self.difficulty = dictionary["difficulty"]
+        self.transaction = transaction
+        self.last_block = last_block
+        self.blockchain = blockchain

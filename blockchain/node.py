@@ -4,11 +4,11 @@ from typing import List
 from .block import Block
 from .blockchain import Blockchain
 from .wallet import Wallet
-from .transaction import Transaction
+from .transaction import Transaction, TransactionOutput
 
 
 class RingNode:
-    def __init__(self, index, address, public_key, utxos):
+    def __init__(self, index: int, address: str, public_key: str, utxos: List[Transaction]):
         self.index = index
         self.address = address
         self.public_key = public_key
@@ -29,6 +29,23 @@ class RingNode:
             "public_key": self.public_key,
             "utxos": [x.to_dict() for x in self.utxos]
         }
+
+    def parser(self, dictionary: dict) -> None:
+        """Convert dictionary to object
+
+        Args:
+            dictionary (dict): The dictionary to be parsed
+        """
+        utxos = []
+        for x in dictionary["utxos"]:
+            utxo = TransactionOutput(0, "", 0)
+            utxo.parser(x)
+            utxos.append(utxo)
+
+        self.index = dictionary["index"]
+        self.address = dictionary["address"]
+        self.public_key = dictionary["public_key"]
+        self.utxos = utxos
 
 class Node:
     def __init__(self, index, capacity, difficulty):
