@@ -35,3 +35,24 @@ class Blockchain:
         self.blockchain[block.previous_hash] = self.last_block
         self.last_block = block
         return self
+
+    def to_dict(self) -> dict:
+        """Convert object to dict
+
+        Args:
+            None
+
+        Returns:
+            dict (dict): Object's dict
+        """
+        blockchain_to_dict = {}
+        for hash, block in self.blockchain.items():
+            blockchain_to_dict[hash] = block.to_dict()
+
+        return {
+            "blockchain": self.blockchain_to_dict,
+            "last_block": self.last_block.to_dict,
+            "transactions": [x.to_dict() for x in self.transactions],
+            "capacity": self.capacity,
+            "difficulty": self.difficulty
+        }

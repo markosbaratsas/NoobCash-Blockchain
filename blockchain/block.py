@@ -64,3 +64,21 @@ class Block:
             self.list_of_transactions.append(transaction)
         self.hash = self.__my_hash()
         return self
+
+    def to_dict(self) -> dict:
+        """Convert object to dict
+
+        Args:
+            None
+
+        Returns:
+            dict (dict): Object's dict
+        """
+        return {
+            "index": self.index,
+            "timestamp": self.timestamp,
+            "list_of_transactions": [x.to_dict() for x in self.list_of_transactions],
+            "nonce": self.nonce,
+            "previous_hash": self.previous_hash,
+            "hash": self.hash
+        }

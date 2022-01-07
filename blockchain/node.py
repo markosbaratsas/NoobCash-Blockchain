@@ -14,6 +14,22 @@ class RingNode:
         self.public_key = public_key
         self.utxos = [x for x in utxos]
 
+    def to_dict(self) -> dict:
+        """Convert object to dict
+
+        Args:
+            None
+
+        Returns:
+            dict (dict): Object's dict
+        """
+        return {
+            "index": self.index,
+            "address": self.address,
+            "public_key": self.public_key,
+            "utxos": [x.to_dict() for x in self.utxos]
+        }
+
 class Node:
     def __init__(self, index, capacity, difficulty):
         self.blockchain = Blockchain(capacity, difficulty)
@@ -52,6 +68,9 @@ class Node:
 
         self.ring[self.index].utxos = self.ring[self.index].utxos[i+1:]
         transaction = Transaction(self.wallet.address, self.wallet.private_key, receiver, amount, transaction_inputs)
+        transaction_outputs = transaction.transaction_outputs
+        self.ring[self.find_node_from_address(receiver).index].utxos.append(transaction_outputs[0])
+        self.ring[self.index].utxos.append(transaction_outputs[1])
         return transaction
     
     def find_node_from_address(self, address):

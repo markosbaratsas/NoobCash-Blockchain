@@ -31,6 +31,7 @@ def bootstrap_node(node: Node, number_of_nodes: str):
     node.blockchain.last_block = Block(0, 0, 1)
     transaction = Transaction(0, 0, node.wallet.address, 100*number_of_nodes,\
         [], "00")
+    node.ring[0].utxos.append(transaction.transaction_outputs[0])
     node.blockchain.last_block.add_transactions_to_block([transaction])
     new_block = Block(node.blockchain.last_block.index+1, 0,\
         node.blockchain.last_block.hash)

@@ -46,16 +46,21 @@ def add_transaction():
 
     for node in this_node.ring:
         # add error checking
-        requests.post(f"http://{node.address}/add_broadcasted_transaction/",\
-            json={"transaction": transaction
-            })
+        if node.index != this_node.index:
+            requests.post(f"http://{node.address}\
+                /add_broadcasted_transaction/",\
+                json={
+                    "transaction": transaction
+                })
 
     nonce = this_node.add_transaction(transaction, found_nonce)
     if nonce != -1:
         for ring_node in this_node.ring:
-            requests.post(f"http://{ring_node.address}/found_nonce/", json={
-                "blockchain": this_node.blockchain
-            })
+            if ring_node.index != this_node.index:
+                requests.post(f"http://{ring_node.address}/found_nonce/",\
+                    json={
+                        "blockchain": this_node.blockchain
+                    })
     return jsonify({}), 200
 
 @app.route('/add_node/', methods=['POST'])
@@ -76,15 +81,18 @@ def add_node():
                     new_node["public_key"],
                     [])
     this_node.register_node_to_ring(new_node)
-    transaction = this_node.create_transaction(new_node["address"], 100)
+    transaction = this_node.create_transaction(new_node.address, 100)
     this_node.add_transaction(transaction, found_nonce)
 
     if len(this_node.ring) == number_nodes:
         for node in this_node.ring:
-            requests.post(f"http://{node.address}/receive_blockchain_and_ring/", json={
-                "blockchain": this_node.blockchain,
-                "ring": this_node.ring
-            })
+            if node.index != this_node.index:
+                requests.post(f"http://{node.address}\
+                    /receive_blockchain_and_ring/",
+                    json={
+                        "blockchain": this_node.blockchain,
+                        "ring": this_node.ring
+                    })
 
     return jsonify({}), 200
 
@@ -121,9 +129,11 @@ def add_broadcasted_transaction():
     nonce = this_node.add_transaction(broadcasted_transaction, found_nonce)
     if nonce != -1:
         for ring_node in this_node.ring:
-            requests.post(f"http://{ring_node.address}/found_nonce/", json={
-                "blockchain": this_node.blockchain
-            })
+            if ring_node.index != this_node.index:
+                requests.post(f"http://{ring_node.address}/found_nonce/",\
+                    json={
+                        "blockchain": this_node.blockchain
+                    })
     return jsonify({}), 200
 
 @app.route('/found_nonce', methods=['POST'])

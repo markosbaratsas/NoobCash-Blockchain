@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from binascii import hexlify, unhexlify
 import hashlib
 
@@ -29,6 +27,22 @@ class TransactionOutput:
             "amount": self.amount
         }
         return hashlib.sha256(dumps(obj).encode('utf8')).hexdigest()
+
+    def to_dict(self) -> dict:
+        """Convert object to dict
+
+        Args:
+            None
+
+        Returns:
+            dict (dict): Object's dict
+        """
+        return {
+            "transaction_id": self.transaction_id,
+            "recipient_address": self.recipient_address,
+            "amount": self.amount,
+            "id": self.id
+        }
 
 
 class Transaction:
@@ -65,9 +79,9 @@ class Transaction:
         if signature:
             self.signature = signature
         else:
-            # self.signature = PKCS1_v1_5.new(RSA.\
-            #     importKey(unhexlify(sender_private_key)))
-            self.signature = PKCS1_v1_5.new(sender_private_key)
+            self.signature = PKCS1_v1_5.new(RSA.\
+                importKey(unhexlify(sender_private_key)))
+            # self.signature = PKCS1_v1_5.new(sender_private_key)
         self.transaction_id = self.__my_hash()
         self.transaction_outputs = self.\
             generate_transaction_outputs(transaction_inputs)
@@ -83,7 +97,7 @@ class Transaction:
             "receiver_address": self.receiver_address,
             "amount": self.amount,
             "transaction_inputs": self.transaction_inputs,
-            "signature": self.signature
+            "signature": str(self.signature)
         }
         return hashlib.sha256(dumps(obj).encode('utf8')).hexdigest()
 
@@ -108,22 +122,22 @@ class Transaction:
             self.sender_address, sender_amount)
         return [receiver_transaction_output, sender_transaction_output]
 
-    def to_dict(self) -> OrderedDict:
+    def to_dict(self) -> dict:
         """Convert object to dict
 
         Args:
             None
 
         Returns:
-            dict (OrderedDict): Object's dict
+            dict (dict): Object's dict
         """
-        return OrderedDict({
+        return {
             "sender_address": self.sender_address,
             "receiver_address": self.receiver_address,
             "amount": self.amount,
-            "transaction_inputs": self.transaction_inputs,
-            "transaction_outputs": self.transaction_outputs
-        })
+            "transaction_inputs": [x.to_dict() for x in self.transaction_inputs],
+            "transaction_outputs": [x.to_dict() for x in self.transaction_outputs]
+        }
 
     # https://gist.github.com/cevaris/e003cdeac4499d225f06
     # https://pycryptodome.readthedocs.io/en/latest/src/signature/pkcs1_v1_5.html
