@@ -3,6 +3,7 @@ from flask_cors import CORS
 import requests
 import sys
 import threading
+from time import sleep
 
 from blockchain import Node, RingNode, Blockchain, Transaction
 from helper import non_bootstrap_node, bootstrap_node
@@ -14,8 +15,7 @@ found_nonce = threading.Event
 app = Flask(__name__)
 CORS(app)
 
-
-@app.route('/transactions/', methods=['GET'])
+@app.route('/transactions', methods=['GET'])
 def get_transactions():
     """Endpoint to get last valid block's transactions.
 
@@ -49,8 +49,8 @@ def add_transaction():
     for node in this_node.ring:
         # add error checking
         if node.index != this_node.index:
-            requests.post(f"http://{node.address}\
-                /add_broadcasted_transaction/",\
+            requests.post(f"http://{node.address}" +
+                "/add_broadcasted_transaction",\
                 json={
                     "transaction": transaction.to_dict()
                 })
@@ -59,13 +59,13 @@ def add_transaction():
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
-                requests.post(f"http://{ring_node.address}/found_nonce/",\
+                requests.post(f"http://{ring_node.address}/found_nonce",\
                     json={
                         "blockchain": this_node.blockchain.to_dict()
                     })
     return jsonify({}), 200
 
-@app.route('/add_node/', methods=['POST'])
+@app.route('/add_node', methods=['POST'])
 def add_node():
     """Endpoint to be used by bootstrap node. When new node is up, inform
     bootstrap node by hitting this endpoint. Everytime a new node is
@@ -88,9 +88,10 @@ def add_node():
 
     if len(this_node.ring) == number_nodes:
         for node in this_node.ring:
+            print(node.address)
             if node.index != this_node.index:
-                requests.post(f"http://{node.address}\
-                    /receive_blockchain_and_ring/",
+                requests.post(f"http://{node.address}" +
+                    "/receive_blockchain_and_ring",
                     json={
                         "blockchain": this_node.blockchain.to_dict(),
                         "ring": [x.to_dict() for x in this_node.ring]
@@ -108,6 +109,7 @@ def receive_blockchain_and_ring():
     """
     blockchain = Blockchain(0, 0)
     blockchain.parser(request.json["blockchain"])
+    print(request.json["blockchain"])
     ring = []
     for node in request.json["ring"]:
         ring_node = RingNode(0, "", "", [])
@@ -128,7 +130,7 @@ def add_broadcasted_transaction():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    broadcasted_transaction = Transaction("", "", "", 0, [])
+    broadcasted_transaction = Transaction("", "", "", 0, [], "s")
     broadcasted_transaction.parser(request.json["transaction"])
     validated = this_node.validate_transaction(broadcasted_transaction)
     if not validated:
@@ -138,7 +140,7 @@ def add_broadcasted_transaction():
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
-                requests.post(f"http://{ring_node.address}/found_nonce/",\
+                requests.post(f"http://{ring_node.address}/found_nonce",\
                     json={
                         "blockchain": this_node.blockchain
                     })
@@ -213,4 +215,4 @@ if __name__ == '__main__':
         port = 5000
 
 
-    app.run(host='127.0.0.1', port=port)
+    app.run(host='127.0.0.1', port=port, threaded=True)

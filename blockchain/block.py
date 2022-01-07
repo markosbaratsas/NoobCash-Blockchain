@@ -91,7 +91,7 @@ class Block:
         """
         list_of_transactions = []
         for x in dictionary["list_of_transactions"]:
-            transaction = Transaction("", "", "", 0, [])
+            transaction = Transaction("", "", "", 0, [], "s")
             transaction.parser(x)
             list_of_transactions.append(transaction)
 

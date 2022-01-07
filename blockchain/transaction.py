@@ -86,7 +86,7 @@ class Transaction:
         self.sender_address = sender_address
         self.receiver_address = recipient_address
         self.amount = amount
-        self.transaction_inputs = [x.id for x in transaction_inputs]
+        self.transaction_inputs = [x for x in transaction_inputs]
         if signature:
             self.signature = signature
         else:
@@ -107,13 +107,15 @@ class Transaction:
             "sender_address": self.sender_address,
             "receiver_address": self.receiver_address,
             "amount": self.amount,
-            "transaction_inputs": self.transaction_inputs,
+            "transaction_inputs": [x.to_dict() for x in\
+                self.transaction_inputs],
             "signature": str(self.signature)
         }
         return hashlib.sha256(dumps(obj).encode('utf8')).hexdigest()
 
     def generate_transaction_outputs(self, \
-            transaction_inputs: List[TransactionOutput]) -> None:
+            transaction_inputs: List[TransactionOutput]) ->\
+            List[TransactionOutput]:
         """Generate Transaction's list of transaction ouputs
 
         Args:
@@ -124,8 +126,11 @@ class Transaction:
             transaction_outputs (List[TransactionOutput]): List of transaction
                 outputs
         """
-        sender_amount = sum([x.amount for x in transaction_inputs]) - self.amount
-        if not transaction_inputs: # this is for the initial transaction of the genesis block of the bootstrap node
+        sender_amount = sum([x.amount for x in transaction_inputs])\
+            - self.amount
+        # this is for the initial transaction of the genesis block of
+        # the bootstrap node
+        if not transaction_inputs:
             sender_amount = self.amount
         receiver_transaction_output = TransactionOutput(self.transaction_id, \
             self.receiver_address, self.amount)
@@ -146,9 +151,11 @@ class Transaction:
             "sender_address": self.sender_address,
             "receiver_address": self.receiver_address,
             "amount": self.amount,
-            "transaction_inputs": [x.to_dict() for x in self.transaction_inputs],
-            "transaction_outputs": [x.to_dict() for x in self.transaction_outputs],
-            "signature": str(self.signature)
+            "transaction_inputs": [x.to_dict() for x in\
+                self.transaction_inputs],
+            "transaction_outputs": [x.to_dict() for x in\
+                self.transaction_outputs],
+            # "signature": str(self.signature)
         }
 
     def parser(self, dictionary: dict) -> None:
@@ -173,7 +180,7 @@ class Transaction:
         self.receiver_address = dictionary["receiver_address"]
         self.transaction_inputs = transaction_inputs
         self.transaction_outputs = transaction_outputs
-        self.signature = dictionary["signature"]
+        # self.signature = dictionary["signature"]
 
     # https://gist.github.com/cevaris/e003cdeac4499d225f06
     # https://pycryptodome.readthedocs.io/en/latest/src/signature/pkcs1_v1_5.html

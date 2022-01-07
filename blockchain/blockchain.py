@@ -52,7 +52,7 @@ class Blockchain:
 
         return {
             "blockchain": blockchain_to_dict,
-            "last_block": self.last_block.to_dict,
+            "last_block": self.last_block.to_dict(),
             "transactions": [x.to_dict() for x in self.transactions],
             "capacity": self.capacity,
             "difficulty": self.difficulty
@@ -66,7 +66,7 @@ class Blockchain:
         """
         transactions = []
         for x in dictionary["transactions"]:
-            transaction = Transaction("", "", "", 0, [])
+            transaction = Transaction("", "", "", 0, [], "s")
             transaction.parser(x)
             transactions.append(transaction)
 
