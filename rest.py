@@ -13,7 +13,7 @@ from cli_parser_args import add_arguments
 
 this_node = None
 number_nodes = None
-found_nonce = threading.Event
+found_nonce_thread = threading.Event
 
 app = Flask(__name__)
 CORS(app)
@@ -59,7 +59,7 @@ def add_transaction():
                     "transaction": transaction.to_dict()
                 })
 
-    nonce = this_node.add_transaction(transaction, found_nonce)
+    nonce = this_node.add_transaction(transaction, found_nonce_thread)
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
@@ -87,7 +87,7 @@ def add_node():
                     [])
     this_node.register_node_to_ring(new_node)
     transaction = this_node.create_transaction(new_node.address, 100)
-    this_node.add_transaction(transaction, found_nonce)
+    this_node.add_transaction(transaction, found_nonce_thread)
 
     return jsonify({}), 200
 
@@ -148,7 +148,8 @@ def add_broadcasted_transaction():
     if not validated:
         return jsonify({'error': 'Transaction not valid'}), 502
 
-    nonce = this_node.add_transaction(broadcasted_transaction, found_nonce)
+    nonce = this_node.add_transaction(broadcasted_transaction,\
+                                    found_nonce_thread)
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
@@ -169,14 +170,22 @@ def found_nonce():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    found_nonce.set()
+    found_nonce_thread.set()
     blockchain = Blockchain(0, 0)
     blockchain.parser(request.json["blockchain"])
     if len(this_node.blockchain.blockchain) < len(blockchain.blockchain):
         this_node.blockchain = blockchain
-    found_nonce.clear()
+    found_nonce_thread.clear()
     return jsonify({}), 200
 
+@app.route('/get_balance', methods=['GET'])
+def get_balance():
+    """Return Balance of current node
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    return jsonify({"balance": this_node.wallet.balance}), 200
 
 
 
@@ -187,6 +196,7 @@ if __name__ == '__main__':
 
     add_arguments(parser)
     args = parser.parse_args()
+    do_variable_checks(args)
 
     if args.which == "node":
         port = args.port
@@ -195,8 +205,7 @@ if __name__ == '__main__':
         capacity = args.capacity
         number_nodes = args.number_nodes
 
-        do_variable_checks(port, index, difficulty, capacity, number_nodes)
-        this_node = Node(index, difficulty, capacity)
+        this_node = Node(index, capacity, difficulty)
 
         # non-bootstrap nodes execute this
         if this_node.index != 0:
@@ -208,4 +217,16 @@ if __name__ == '__main__':
         app.run(host='127.0.0.1', port=port, threaded=True)
 
     elif args.which == "transaction":
-        pass
+        r = requests.post(f"{args.sender}/new_transaction", json={
+            "receiver": args.receiver,
+            "amount": args.amount
+        })
+        print(r.content)
+
+    elif args.which == "view":
+        r = requests.get(f"{args.node}/transactions")
+        print(r.content)
+
+    elif args.which == "balance":
+        r = requests.get(f"{args.node}/get_balance")
+        print(r.content)

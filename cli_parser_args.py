@@ -26,8 +26,22 @@ def add_arguments(parser: argparse.ArgumentParser):
                                         help='Add transaction to blockchain')
     parser_transaction.set_defaults(which='transaction')
     parser_transaction.add_argument('-r', '--recipient', default=-1, type=int,
-                                 help='Index of recipient of the transaction')
+                                 help='Transaction\'s recipient address')
     parser_transaction.add_argument('-s', '--sender', default=-1, type=int,
-                                 help='Index of sender of the transaction')
+                                 help='Transaction\'s sender address')
     parser_transaction.add_argument('-a', '--amount', default=-1, type=int,
                                  help='Amount to be sent')
+
+    parser_view = sub.add_parser('view', help='View last transactions\
+                                        (transactions of last valid block)')
+    parser_view.set_defaults(which='view')
+    parser_view.add_argument('-n', '--node', default=-1, type=int,
+                                 help='The node\'s address, from which to view\
+                                     transactions')
+
+    parser_balance = sub.add_parser('balance', help='Print balance of a\
+                                        specific node')
+    parser_balance.set_defaults(which='balance')
+    parser_balance.add_argument('-n', '--node', default=-1, type=int,
+                                 help='The node\'s address, for which to print\
+                                     the balance')

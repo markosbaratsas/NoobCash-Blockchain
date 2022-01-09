@@ -4,7 +4,7 @@ import sys
 from blockchain import Node, RingNode, Block, Transaction, TransactionOutput
 
 
-def do_variable_checks(port, index, difficulty, capacity, number_nodes):
+def do_variable_checks(args):
     """Does a variety of checks based on user input on the CLI
 
     Args:
@@ -17,21 +17,41 @@ def do_variable_checks(port, index, difficulty, capacity, number_nodes):
     Returns:
         None, or exits the program if there is error
     """
-    if index != 0 and port == -1:
-        print("Please provide port number")
-        sys.exit(1)
-    if index == -1:
-        print("Please provide index")
-        sys.exit(1)
-    if capacity == -1:
-        print("Please provide capacity")
-        sys.exit(1)
-    if difficulty == -1:
-        print("Please provide difficulty")
-        sys.exit(1)
-    if index == 0 and number_nodes == -1:
-        print("Please provide number of nodes in the bootstrap node")
-        sys.exit(1)
+    if args.which == "node":
+        if args.index != 0 and args.port == -1:
+            print("Please provide port number")
+            sys.exit(1)
+        if args.index == -1:
+            print("Please provide index")
+            sys.exit(1)
+        if args.capacity == -1:
+            print("Please provide capacity")
+            sys.exit(1)
+        if args.difficulty == -1:
+            print("Please provide difficulty")
+            sys.exit(1)
+        if args.index == 0 and args.number_nodes == -1:
+            print("Please provide number of nodes in the bootstrap node")
+            sys.exit(1)
+    elif args.which == "transaction":
+        if args.recipient == -1:
+            print("Please provide recipient node")
+            sys.exit(1)
+        if args.sender == -1:
+            print("Please provide sender node")
+            sys.exit(1)
+        if args.amount == -1:
+            print("Please provide transaction amount")
+            sys.exit(1)
+    elif args.which == "view":
+        if args.node == -1:
+            print("Please provide node, from which to view transaction")
+            sys.exit(1)
+    elif args.which == "balance":
+        if args.node == -1:
+            print("Please provide node, for which to print balance")
+            sys.exit(1)
+
 
 def non_bootstrap_node(node: Node, port: str):
     """Initialization of a non bootstrap node. Sends the node's information
