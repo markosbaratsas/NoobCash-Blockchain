@@ -155,7 +155,7 @@ class Transaction:
                 self.transaction_inputs],
             "transaction_outputs": [x.to_dict() for x in\
                 self.transaction_outputs],
-            # "signature": str(self.signature)
+            "signature": self.signature
         }
 
     def parser(self, dictionary: dict) -> None:
@@ -180,7 +180,7 @@ class Transaction:
         self.receiver_address = dictionary["receiver_address"]
         self.transaction_inputs = transaction_inputs
         self.transaction_outputs = transaction_outputs
-        # self.signature = dictionary["signature"]
+        self.signature = dictionary["signature"]
 
     # https://gist.github.com/cevaris/e003cdeac4499d225f06
     # https://pycryptodome.readthedocs.io/en/latest/src/signature/pkcs1_v1_5.html
@@ -194,7 +194,7 @@ class Transaction:
             hash (bytes): Signed transaction
         """
         str_dict = SHA.new(str(self.to_dict()).encode('utf8'))
-        return hexlify(self.signature.sign(str_dict)).decode('ascii')
+        self.signature = hexlify(self.signature.sign(str_dict)).decode('ascii')
 
     def verify_transaction(self) -> bool:
         """Verify transaction by checking transaction signature with sender's
@@ -203,7 +203,7 @@ class Transaction:
         Returns:
             bool: True if verified else False
         """
-        public_key = RSA.importKey(self.sender_address)
+        public_key = RSA.importKey(unhexlify(self.sender_address))
         verifier = PKCS1_v1_5.new(public_key)
         str_dict = SHA.new(str(self.to_dict()).encode('utf8'))
         

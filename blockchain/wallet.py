@@ -28,7 +28,7 @@ class Wallet:
         private_key = hexlify(private_key.exportKey(format='DER')).decode('ascii')
         public_key = hexlify(public_key.exportKey(format='DER')).decode('ascii')
         
-        return private_key, public_key
+        return public_key, private_key
     
     def balance(self):
         return sum([x.amount for x in self.unspent_transactions])

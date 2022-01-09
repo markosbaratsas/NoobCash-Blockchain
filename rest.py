@@ -101,7 +101,6 @@ def receive_blockchain_and_ring():
     """
     blockchain = Blockchain(0, 0)
     blockchain.parser(request.json["blockchain"])
-    print(request.json["blockchain"])
     ring = []
     for node in request.json["ring"]:
         ring_node = RingNode(0, "", "", [])
@@ -112,7 +111,7 @@ def receive_blockchain_and_ring():
     return jsonify({}), 200
 
 
-@app.route('/broadcast_nodes', methods=['POST'])
+@app.route('/broadcast_nodes', methods=['GET'])
 def broadcast_nodes():
     """Endpoint to be used by bootstrap node. If all nodes are registered,
     bootstrap node broadcasts its blockchain and ring.
@@ -122,7 +121,6 @@ def broadcast_nodes():
     """
     if len(this_node.ring) == number_nodes:
         for node in this_node.ring:
-            print(node.address)
             if node.index != this_node.index:
                 requests.post(f"http://{node.address}" +
                     "/receive_blockchain_and_ring",
