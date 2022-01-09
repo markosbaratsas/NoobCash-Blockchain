@@ -1,3 +1,4 @@
+import argparse
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import requests
@@ -6,7 +7,9 @@ import threading
 from time import sleep
 
 from blockchain import Node, RingNode, Blockchain, Transaction
-from helper import non_bootstrap_node, bootstrap_node
+from helper import non_bootstrap_node, bootstrap_node, do_variable_checks
+from cli_parser_args import add_arguments
+
 
 this_node = None
 number_nodes = None
@@ -14,6 +17,7 @@ found_nonce = threading.Event
 
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route('/transactions', methods=['GET'])
 def get_transactions():
@@ -34,7 +38,7 @@ def add_transaction():
     """Endpoint to create a new transaction by a node. Checks if the node
     has enough coins to make the transaction, and if it does the function
     also broadcasts the transaction to every other node by hitting the
-    /add_broadcasted_transaction endpoint,
+    /add_broadcasted_transaction endpoint.
 
     Returns:
         Response, int: The response, along with the HTTP status
@@ -70,8 +74,7 @@ def add_node():
     """Endpoint to be used by bootstrap node. When new node is up, inform
     bootstrap node by hitting this endpoint. Everytime a new node is
     registered, bootstrap send it 100 coins by creating and broadcasting a
-    new transaction. When all nodes are registered, bootstrap node broadcasts
-    its blockchain and ring.
+    new transaction.
 
     Returns:
         Response, int: The response, along with the HTTP status
@@ -85,17 +88,6 @@ def add_node():
     this_node.register_node_to_ring(new_node)
     transaction = this_node.create_transaction(new_node.address, 100)
     this_node.add_transaction(transaction, found_nonce)
-
-    if len(this_node.ring) == number_nodes:
-        for node in this_node.ring:
-            print(node.address)
-            if node.index != this_node.index:
-                requests.post(f"http://{node.address}" +
-                    "/receive_blockchain_and_ring",
-                    json={
-                        "blockchain": this_node.blockchain.to_dict(),
-                        "ring": [x.to_dict() for x in this_node.ring]
-                    })
 
     return jsonify({}), 200
 
@@ -117,6 +109,28 @@ def receive_blockchain_and_ring():
         ring.append(ring_node)
     this_node.blockchain = blockchain
     this_node.ring = ring
+    return jsonify({}), 200
+
+
+@app.route('/broadcast_nodes', methods=['POST'])
+def broadcast_nodes():
+    """Endpoint to be used by bootstrap node. If all nodes are registered,
+    bootstrap node broadcasts its blockchain and ring.
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    if len(this_node.ring) == number_nodes:
+        for node in this_node.ring:
+            print(node.address)
+            if node.index != this_node.index:
+                requests.post(f"http://{node.address}" +
+                    "/receive_blockchain_and_ring",
+                    json={
+                        "blockchain": this_node.blockchain.to_dict(),
+                        "ring": [x.to_dict() for x in this_node.ring]
+                    })
+
     return jsonify({}), 200
 
 @app.route('/add_broadcasted_transaction', methods=['POST'])
@@ -169,50 +183,31 @@ def found_nonce():
 
 
 if __name__ == '__main__':
-    from argparse import ArgumentParser
 
-    parser = ArgumentParser()
-    parser.add_argument('-p', '--port', default=-1, type=int, help=\
-        'Port to listen on')
-    parser.add_argument('-i', '--index', default=-1, type=int, help=\
-        'Index of node')
-    parser.add_argument('-c', '--capacity', default=-1, type=int, help=\
-        'Blockchain capacity')
-    parser.add_argument('-d', '--difficulty', default=-1, type=int, help=\
-        'Blockchain difficulty')
-    parser.add_argument('-n', '--number_nodes', default=-1, type=int, help=\
-        'The total number of nodes')
+    parser = argparse.ArgumentParser(description='CLI tool to manage\
+                                    Blockchain from different nodes')
+
+    add_arguments(parser)
     args = parser.parse_args()
-    port = args.port
-    index = args.index
-    difficulty = args.difficulty
-    capacity = args.capacity
-    number_nodes = args.number_nodes
-    
-    if index != 0 and port == -1:
-        print("Please provide port number")
-        sys.exit(1)
-    if index == -1:
-        print("Please provide index")
-        sys.exit(1)
-    if capacity == -1:
-        print("Please provide capacity")
-        sys.exit(1)
-    if difficulty == -1:
-        print("Please provide difficulty")
-        sys.exit(1)
-    if index == 0 and number_nodes == -1:
-        print("Please provide number of nodes in the bootstrap node")
-        sys.exit(1)
 
-    this_node = Node(index, difficulty, capacity)
+    if args.which == "node":
+        port = args.port
+        index = args.index
+        difficulty = args.difficulty
+        capacity = args.capacity
+        number_nodes = args.number_nodes
 
-    # non-bootstrap nodes execute this
-    if this_node.index != 0:
-        non_bootstrap_node(this_node, port)
-    else:
-        bootstrap_node(this_node, number_nodes)
-        port = 5000
+        do_variable_checks(port, index, difficulty, capacity, number_nodes)
+        this_node = Node(index, difficulty, capacity)
 
+        # non-bootstrap nodes execute this
+        if this_node.index != 0:
+            non_bootstrap_node(this_node, port)
+        else:
+            bootstrap_node(this_node, number_nodes)
+            port = 5000
 
-    app.run(host='127.0.0.1', port=port, threaded=True)
+        app.run(host='127.0.0.1', port=port, threaded=True)
+
+    elif args.which == "transaction":
+        pass

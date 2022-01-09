@@ -71,13 +71,15 @@ class Node:
 
     def create_transaction(self, receiver, amount):
         sum = 0
+        i = 0
         transaction_inputs = []
         utxos = self.ring[self.index].utxos
-        for i in range(len(utxos)):
+        while i < len(utxos):
             sum += utxos[i].amount
             transaction_inputs.append(utxos[i])
             if sum >= amount:
                 break
+            i += 1
 
         if sum < amount:
             print("Not enough coins to make transaction")

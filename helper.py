@@ -1,7 +1,37 @@
 import requests
+import sys
 
 from blockchain import Node, RingNode, Block, Transaction, TransactionOutput
 
+
+def do_variable_checks(port, index, difficulty, capacity, number_nodes):
+    """Does a variety of checks based on user input on the CLI
+
+    Args:
+        port (int): Port
+        index (int): Node index
+        difficulty (int): Blockchain difficulty
+        capacity (int): Capacity of transactions ineach block of the blockchain
+        number_nodes (int): Number of nodes in the blockchain
+
+    Returns:
+        None, or exits the program if there is error
+    """
+    if index != 0 and port == -1:
+        print("Please provide port number")
+        sys.exit(1)
+    if index == -1:
+        print("Please provide index")
+        sys.exit(1)
+    if capacity == -1:
+        print("Please provide capacity")
+        sys.exit(1)
+    if difficulty == -1:
+        print("Please provide difficulty")
+        sys.exit(1)
+    if index == 0 and number_nodes == -1:
+        print("Please provide number of nodes in the bootstrap node")
+        sys.exit(1)
 
 def non_bootstrap_node(node: Node, port: str):
     """Initialization of a non bootstrap node. Sends the node's information
