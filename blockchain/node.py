@@ -8,7 +8,19 @@ from .transaction import Transaction, TransactionOutput
 
 
 class RingNode:
-    def __init__(self, index: int, address: str, public_key: str, utxos: List[Transaction]):
+    """RingNode: A node class for ring list items.
+    """
+    def __init__(self, index: int, address: str, public_key: str,\
+        utxos: List[TransactionOutput]):
+        """Initialize the RingNode
+
+        Args:
+            index (int): Ring node's index
+            address (int): Ring node's address
+            public_key (int): Ring node's public_key
+            utxos (List[TransactionOutput]): Ring node's list of unspent
+                                             transactions
+        """
         self.index = index
         self.address = address
         self.public_key = public_key
@@ -48,28 +60,55 @@ class RingNode:
         self.utxos = utxos
 
 class Node:
-    def __init__(self, index, capacity, difficulty):
+    """Node: Node that contains node's information and a list (ring) of the
+    rest of the nodes.
+    """
+    def __init__(self, index: int, capacity: int, difficulty: int):
+        """Initialize the Node
+
+        Args:
+            index (int): Node's index
+            capacity (int): Node's blockchain capacity
+            difficulty (int): Node's blockchain difficulty
+        """
         self.blockchain = Blockchain(capacity, difficulty)
         self.index = index
         self.wallet = self.create_wallet()
         self.ring = []
 
     def set_ring(self, ring_nodes: List[RingNode]):
+        """Set node's ring of node.
+
+        Args:
+            ring_nodes (List[RingNode]): The list of the nodes to be added
+                                         to the ring
+        """
         self.ring = [x for x in ring_nodes]
 
-    def create_new_block(self):
-        pass
-
     def create_wallet(self):
-        #create a wallet for this node, with a public key and a private key
+        """Create node's wallet.
+        """
         return Wallet()
 
-    def register_node_to_ring(self, node_ring):
-        #add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
-        #bottstrap node informs all other nodes and gives the request node an id and 100 NBCs
+    def register_node_to_ring(self, node_ring: RingNode):
+        """Register node to ring.
+
+        Args:
+            node_ring (RingNode): The node to be added to the ring
+        """
         self.ring.append(node_ring)
 
-    def create_transaction(self, receiver, amount):
+    def create_transaction(self, receiver: str, amount: int) -> Transaction:
+        """Create a new transaction made by the node.
+
+        Args:
+            receiver (str): The address of the receiver node
+            amount (int): The amount to be sent
+
+        Returns:
+            transaction (Transaction): The created transaction or None if
+                                       transaction could not be made.
+        """
         sum = 0
         i = 0
         transaction_inputs = []
@@ -86,19 +125,28 @@ class Node:
             return None
 
         self.ring[self.index].utxos = self.ring[self.index].utxos[i+1:]
-        transaction = Transaction(self.wallet.address, self.wallet.private_key, receiver, amount, transaction_inputs)
+        transaction = Transaction(self.ring[self.index].address,\
+            self.wallet.private_key, receiver, amount, transaction_inputs)
         transaction.sign_transaction()
         transaction_outputs = transaction.transaction_outputs
-        self.ring[self.find_node_from_address(receiver).index].utxos.append(transaction_outputs[0])
+        self.ring[self.find_node_from_address(receiver).index].utxos.\
+            append(transaction_outputs[0])
         self.ring[self.index].utxos.append(transaction_outputs[1])
         return transaction
     
-    def find_node_from_address(self, address):
+    def find_node_from_address(self, address: str) -> RingNode:
+        """Find a ring node given its address.
+
+        Args:
+            address (str): The address of the node to be found
+
+        Returns:
+            node (RingNode): The found ring node.
+        """
         for node in self.ring:
             if node.address == address:
                 return node
         return None
-        
 
     def validate_transaction(self, transaction: Transaction) -> bool:
         """Validate transaction by:
@@ -147,10 +195,10 @@ class Node:
                 this variable will be updated
 
         Returns:
-            int: -1 if added block successfully, or nonce > 0 if new block
-                created and mined.
+            nonce (int): -1 if added block successfully, or nonce > 0 if new
+                         block created and mined.
         """
-        if len(self.blockchain.transactions) <= self.blockchain.capacity:
+        if len(self.blockchain.transactions) < self.blockchain.capacity:
             self.blockchain.transactions.append(transaction)
             return -1
 
@@ -167,8 +215,19 @@ class Node:
         return nonce
 
     def mine_block(self, block: Block, found_nonce: threading.Event) -> int:
-        while not found_nonce.isSet():
-            if int(block.hash[:self.blockchain.difficulty]) == 0:
+        """Mine new block.
+
+        Args:
+            block (Block): The new block to be mined.
+            found_nonce (threading.Event): An event that is set if a nonce
+                                           is found by another node.
+
+        Returns:
+            nonce (int): The nonce found or -1 if the event is set.
+        """
+        while not found_nonce.is_set():
+            if block.hash[:self.blockchain.difficulty] ==\
+                "0" * self.blockchain.difficulty:
                 self.blockchain.add_new_block(block)
                 return block.nonce
             block.set_nonce(block.nonce+1)

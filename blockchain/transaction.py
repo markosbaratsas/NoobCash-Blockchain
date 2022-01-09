@@ -13,14 +13,30 @@ from typing import List, Optional
 
 
 class TransactionOutput:
+    """TransactionOutput: A class for the transaction outputs of a transaction
+    """
 
-    def __init__(self, transaction_id: int, recipient_address: str, amount: int):
+    def __init__(self, transaction_id: int, recipient_address: str,\
+        amount: int):
+        """Initialize the TransactionOutput
+
+        Args:
+            transaction_id (int): The id of the transaction this transaction
+                                  is output of
+            recipient_address (str): The address of the receiver
+            amount (int): The transaction's amount
+        """
         self.transaction_id = transaction_id
         self.recipient_address = recipient_address
         self.amount = amount
         self.id = self.__my_hash()
 
-    def __my_hash(self):
+    def __my_hash(self) -> str:
+        """Private function used to generate transaction output's hash
+
+        Returns:
+            hash (str): TransactionOutput's hash
+        """
         obj = {
             "transaction_id": self.transaction_id,
             "recipient_address": self.recipient_address,

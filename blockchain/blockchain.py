@@ -6,8 +6,8 @@ class Blockchain:
     """Blockchain: Blockchain that contains dict with blocks and other useful
     blockchain information
     """
-    
-    def __init__(self, capacity, difficulty):
+
+    def __init__(self, capacity: int, difficulty: int):
         """Initialize the Blockchain
 
         Args:
