@@ -13,7 +13,7 @@ from cli_parser_args import add_arguments
 
 this_node = None
 number_nodes = None
-found_nonce_thread = threading.Event
+found_nonce_thread = threading.Event()
 
 app = Flask(__name__)
 CORS(app)

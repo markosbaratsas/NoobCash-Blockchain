@@ -36,7 +36,7 @@ class Block:
         self.nonce = nonce
         self.hash = self.__my_hash()
         
-    def __my_hash(self):
+    def __my_hash(self) -> str:
         """Private function used to generate block's hash
 
         Returns:
@@ -45,7 +45,8 @@ class Block:
         obj = {
             "index": self.index,
             "timestamp": self.timestamp,
-            "list_of_transactions": [str(x) for x in self.list_of_transactions],
+            "list_of_transactions": [str(x) for x in\
+                self.list_of_transactions],
             "nonce": self.nonce,
             "previous_hash": self.previous_hash
         }
@@ -77,7 +78,8 @@ class Block:
         return {
             "index": self.index,
             "timestamp": self.timestamp,
-            "list_of_transactions": [x.to_dict() for x in self.list_of_transactions],
+            "list_of_transactions": [x.to_dict() for x in\
+                self.list_of_transactions],
             "nonce": self.nonce,
             "previous_hash": self.previous_hash,
             "hash": self.hash
