@@ -82,6 +82,7 @@ def bootstrap_node(node: Node, number_of_nodes: str):
     transaction = Transaction(0, 0, "127.0.0.1:5000", 100*number_of_nodes,\
         [], "00")
     node.ring[0].utxos.append(transaction.transaction_outputs[0])
+    node.wallet.unspent_transactions = node.ring[0].utxos
     node.blockchain.last_block.add_transactions_to_block([transaction])
     new_block = Block(node.blockchain.last_block.index+1, 0,\
         node.blockchain.last_block.hash)

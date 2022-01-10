@@ -25,9 +25,9 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser_transaction = sub.add_parser('add_transaction',
                                         help='Add transaction to blockchain')
     parser_transaction.set_defaults(which='transaction')
-    parser_transaction.add_argument('-r', '--recipient', default=-1, type=int,
+    parser_transaction.add_argument('-r', '--recipient', default=-1, type=str,
                                  help='Transaction\'s recipient address')
-    parser_transaction.add_argument('-s', '--sender', default=-1, type=int,
+    parser_transaction.add_argument('-s', '--sender', default=-1, type=str,
                                  help='Transaction\'s sender address')
     parser_transaction.add_argument('-a', '--amount', default=-1, type=int,
                                  help='Amount to be sent')
@@ -35,13 +35,18 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser_view = sub.add_parser('view', help='View last transactions\
                                         (transactions of last valid block)')
     parser_view.set_defaults(which='view')
-    parser_view.add_argument('-n', '--node', default=-1, type=int,
+    parser_view.add_argument('-n', '--node', default=-1, type=str,
                                  help='The node\'s address, from which to view\
                                      transactions')
 
     parser_balance = sub.add_parser('balance', help='Print balance of a\
                                         specific node')
     parser_balance.set_defaults(which='balance')
-    parser_balance.add_argument('-n', '--node', default=-1, type=int,
+    parser_balance.add_argument('-n', '--node', default=-1, type=str,
                                  help='The node\'s address, for which to print\
                                      the balance')
+
+    parser_balance = sub.add_parser('broadcast_nodes', help='Broadcast\
+                                    bootstrap blockchain and ring node to\
+                                    all nodes')
+    parser_balance.set_defaults(which='broadcast_nodes')

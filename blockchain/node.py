@@ -123,13 +123,14 @@ class Node:
         if sum < amount:
             print("Not enough coins to make transaction")
             return None
-
         self.ring[self.index].utxos = self.ring[self.index].utxos[i+1:]
+        self.wallet.unspent_transactions = self.ring[self.index].utxos
         transaction = Transaction(self.ring[self.index].address,\
-            self.wallet.private_key, receiver, amount, transaction_inputs)
-        transaction.sign_transaction()
+            self.wallet.public_key, receiver, amount,\
+            transaction_inputs)
+        transaction.sign_transaction(self.wallet.private_key)
         transaction_outputs = transaction.transaction_outputs
-        self.ring[self.find_node_from_address(receiver).index].utxos.\
+        self.find_node_from_address(receiver).utxos.\
             append(transaction_outputs[0])
         self.ring[self.index].utxos.append(transaction_outputs[1])
         return transaction
@@ -152,7 +153,7 @@ class Node:
         """Validate transaction by:
         1. Verifying signature
         2. Enough coins to make transaction
-        Also update sender's utxos.
+        Also update sender's and receiver's utxos.
 
         Args:
             transaction (Transaction): transaction to be validated
@@ -181,6 +182,15 @@ class Node:
 
         for i in range(len(spent_transactions)):
             self.ring[sender].utxos.remove(spent_transactions[i])
+
+        self.find_node_from_address(transaction.receiver_address)\
+            .utxos.append(transaction.transaction_outputs[0])
+        self.find_node_from_address(transaction.sender_address)\
+            .utxos.append(transaction.transaction_outputs[1])
+
+        if self.find_node_from_address(transaction.sender_address).index\
+            == self.index:
+            self.wallet.unspent_transactions = self.ring[self.index].utxos
 
         return True
 

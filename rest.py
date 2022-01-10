@@ -51,13 +51,14 @@ def add_transaction():
         return jsonify({'error': 'Not enough coins to make transaction'}), 501
 
     for node in this_node.ring:
-        # add error checking
         if node.index != this_node.index:
-            requests.post(f"http://{node.address}" +
+            r = requests.post(f"http://{node.address}" +
                 "/add_broadcasted_transaction",\
                 json={
                     "transaction": transaction.to_dict()
                 })
+            if r.status_code != 200:
+                return jsonify({'error': 'Transaction not validated'}), 503
 
     nonce = this_node.add_transaction(transaction, found_nonce_thread)
     if nonce != -1:
@@ -108,6 +109,8 @@ def receive_blockchain_and_ring():
         ring.append(ring_node)
     this_node.blockchain = blockchain
     this_node.ring = ring
+    this_node.wallet.unspent_transactions =\
+        this_node.ring[this_node.index].utxos
     return jsonify({}), 200
 
 
@@ -185,7 +188,7 @@ def get_balance():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    return jsonify({"balance": this_node.wallet.balance}), 200
+    return jsonify({"balance": this_node.wallet.balance()}), 200
 
 
 
@@ -217,16 +220,20 @@ if __name__ == '__main__':
         app.run(host='127.0.0.1', port=port, threaded=True)
 
     elif args.which == "transaction":
-        r = requests.post(f"{args.sender}/new_transaction", json={
-            "receiver": args.receiver,
+        r = requests.post(f"http://{args.sender}/new_transaction", json={
+            "receiver": args.recipient,
             "amount": args.amount
         })
         print(r.content)
 
     elif args.which == "view":
-        r = requests.get(f"{args.node}/transactions")
+        r = requests.get(f"http://{args.node}/transactions")
         print(r.content)
 
     elif args.which == "balance":
-        r = requests.get(f"{args.node}/get_balance")
+        r = requests.get(f"http://{args.node}/get_balance")
+        print(r.content)
+
+    elif args.which == "broadcast_nodes":
+        r = requests.get(f"http://127.0.0.1:5000/broadcast_nodes")
         print(r.content)

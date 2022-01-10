@@ -78,7 +78,7 @@ class Transaction:
     address, etc.
     """
 
-    def __init__(self, sender_address: str, sender_private_key: Optional[str],\
+    def __init__(self, sender_address: str, sender_public_key: str,\
             recipient_address: str, amount: int,\
             transaction_inputs: List[TransactionOutput],
             signature: Optional[str] = None) -> None:
@@ -86,29 +86,25 @@ class Transaction:
 
         Args:
             sender_address (str): Sender's wallet public key
-            sender_private_key (str): Sender's wallet private key. Given by
-                transaction sender when new transaction needs to be created.
-                Given when transaction `signature` is not given
             recipient_address (str): Recipient's wallet private key
             amount (int): Amount to be sent through transaction
             transaction_inputs (List[TransactionOutput]): List of transaction
                 inputs
             signature (str): Transaction signature, which is given if
-                `sender_private_key`variable is not given
+                transaction was broadcasted and not created
 
         Returns:
             None
         """
         self.sender_address = sender_address
+        self.sender_public_key = sender_public_key
         self.receiver_address = recipient_address
         self.amount = amount
         self.transaction_inputs = [x for x in transaction_inputs]
         if signature:
             self.signature = signature
         else:
-            self.signature = PKCS1_v1_5.new(RSA.\
-                importKey(unhexlify(sender_private_key)))
-            # self.signature = PKCS1_v1_5.new(sender_private_key)
+            self.signature = ""
         self.transaction_id = self.__my_hash()
         self.transaction_outputs = self.\
             generate_transaction_outputs(transaction_inputs)
@@ -121,6 +117,7 @@ class Transaction:
         """
         obj = {
             "sender_address": self.sender_address,
+            "sender_public_key": self.sender_public_key,
             "receiver_address": self.receiver_address,
             "amount": self.amount,
             "transaction_inputs": [x.to_dict() for x in\
@@ -165,6 +162,7 @@ class Transaction:
         """
         return {
             "sender_address": self.sender_address,
+            "sender_public_key": self.sender_public_key,
             "receiver_address": self.receiver_address,
             "amount": self.amount,
             "transaction_inputs": [x.to_dict() for x in\
@@ -193,6 +191,7 @@ class Transaction:
             transaction_outputs.append(transaction)
 
         self.sender_address = dictionary["sender_address"]
+        self.sender_public_key = dictionary["sender_public_key"]
         self.receiver_address = dictionary["receiver_address"]
         self.transaction_inputs = transaction_inputs
         self.transaction_outputs = transaction_outputs
@@ -200,17 +199,16 @@ class Transaction:
 
     # https://gist.github.com/cevaris/e003cdeac4499d225f06
     # https://pycryptodome.readthedocs.io/en/latest/src/signature/pkcs1_v1_5.html
-    def sign_transaction(self) -> str:
-        """Sign transaction with private key
+    def sign_transaction(self, sender_private_key: str) -> str:
+        """Sign transaction with private key, by setting the signature
 
         Args:
-            None
-
-        Returns:
-            hash (bytes): Signed transaction
+            sender_private_key (str): Sender's wallet private key.
         """
+        signer = PKCS1_v1_5.new(RSA.\
+            importKey(unhexlify(sender_private_key)))
         str_dict = SHA.new(str(self.to_dict()).encode('utf8'))
-        self.signature = hexlify(self.signature.sign(str_dict)).decode('ascii')
+        self.signature = hexlify(signer.sign(str_dict)).decode('ascii')
 
     def verify_transaction(self) -> bool:
         """Verify transaction by checking transaction signature with sender's
@@ -219,11 +217,13 @@ class Transaction:
         Returns:
             bool: True if verified else False
         """
-        public_key = RSA.importKey(unhexlify(self.sender_address))
+        public_key = RSA.importKey(unhexlify(self.sender_public_key))
         verifier = PKCS1_v1_5.new(public_key)
         str_dict = SHA.new(str(self.to_dict()).encode('utf8'))
         
-        if verifier.verify(str_dict, unhexlify(self.signature)):
+        try:
+            verifier.verify(str_dict, unhexlify(self.signature))
+        except:
+            return False
+        else:
             return True
-
-        return False
