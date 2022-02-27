@@ -158,7 +158,7 @@ def add_broadcasted_transaction():
             if ring_node.index != this_node.index:
                 requests.post(f"http://{ring_node.address}/found_nonce",\
                     json={
-                        "blockchain": this_node.blockchain
+                        "blockchain": this_node.blockchain.to_dict()
                     })
     return jsonify({}), 200
 

@@ -193,6 +193,7 @@ class Transaction:
         self.sender_address = dictionary["sender_address"]
         self.sender_public_key = dictionary["sender_public_key"]
         self.receiver_address = dictionary["receiver_address"]
+        self.amount = dictionary["amount"]
         self.transaction_inputs = transaction_inputs
         self.transaction_outputs = transaction_outputs
         self.signature = dictionary["signature"]

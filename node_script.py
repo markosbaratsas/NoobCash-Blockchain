@@ -41,8 +41,8 @@ if __name__ == "__main__":
     for transaction in transactions:
         from_wallet, to_wallet, amount = transaction
 
-        r = requests.post(f"http://{addresses[to_wallet]}/new_transaction", json={
-            "receiver": addresses[from_wallet],
+        r = requests.post(f"http://{addresses[from_wallet]}/new_transaction", json={
+            "receiver": addresses[to_wallet],
             "amount": amount
         })
 
