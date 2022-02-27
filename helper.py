@@ -1,7 +1,7 @@
 import requests
 import sys
 
-from .node_script import addresses
+from node_script import addresses
 from blockchain import Node, RingNode, Block, Transaction, TransactionOutput
 
 
