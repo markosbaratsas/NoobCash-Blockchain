@@ -1,6 +1,7 @@
 import requests
 import sys
 
+from .node_script import addresses
 from blockchain import Node, RingNode, Block, Transaction, TransactionOutput
 
 
@@ -61,10 +62,10 @@ def non_bootstrap_node(node: Node, port: str):
         node (Node): The node to be initialized
         port (str): The port of the node
     """
-    requests.post("http://127.0.0.1:5000/add_node", json={
+    requests.post(f"{addresses[0]}/add_node", json={
         "index": node.index,
-        "address": f"127.0.0.1:{port}",
-        "public_key": f"127.0.0.1:{port}"
+        "address": addresses[node.index],
+        "public_key": addresses[node.index]
     })
 
 def bootstrap_node(node: Node, number_of_nodes: str):
@@ -76,10 +77,10 @@ def bootstrap_node(node: Node, number_of_nodes: str):
         node (Node): The bootstrap node to be initialized
         number_of_nodes (int): The number of the nodes of the system
     """
-    new_node = RingNode(0, "127.0.0.1:5000", "127.0.0.1:5000", [])
+    new_node = RingNode(0, addresses[0], addresses[0], [])
     node.register_node_to_ring(new_node)
     node.blockchain.last_block = Block(0, 0, 1)
-    transaction = Transaction(0, 0, "127.0.0.1:5000", 100*number_of_nodes,\
+    transaction = Transaction(0, 0, addresses[0], 100*number_of_nodes,\
         [], "00")
     node.ring[0].utxos.append(transaction.transaction_outputs[0])
     node.wallet.unspent_transactions = node.ring[0].utxos

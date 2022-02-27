@@ -7,11 +7,11 @@ from time import sleep
 # the addresses are hardcoded here because this script will only run in a
 # specific network with those addresses
 addresses = {
-    0: "192.168.0.2:8000",
-    1: "192.168.0.3:8000",
-    2: "192.168.0.4:8000",
-    3: "192.168.0.5:8000",
-    4: "192.168.0.1:8000"
+    0: "192.168.0.2:5000",
+    1: "192.168.0.3:5000",
+    2: "192.168.0.4:5000",
+    3: "192.168.0.5:5000",
+    4: "192.168.0.1:5000"
 }
 
 if __name__ == "__main__":
