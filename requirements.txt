@@ -1,7 +1,7 @@
 certifi==2021.10.8
 charset-normalizer==2.0.9
 click==8.0.3
-dataclasses==0.8
+dataclasses
 Flask==2.0.2
 Flask-Cors==3.0.10
 idna==3.3
@@ -9,7 +9,6 @@ importlib-metadata==4.8.3
 itsdangerous==2.0.1
 Jinja2==3.0.3
 MarkupSafe==2.0.1
-pkg-resources==0.0.0
 pycrypto==2.6.1
 requests==2.26.0
 six==1.16.0

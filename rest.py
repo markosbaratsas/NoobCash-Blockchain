@@ -217,7 +217,7 @@ if __name__ == '__main__':
             bootstrap_node(this_node, number_nodes)
             port = 5000
 
-        app.run(host='127.0.0.1', port=port, threaded=True)
+        app.run(host="0.0.0.0", port=port, threaded=True)
 
     elif args.which == "transaction":
         r = requests.post(f"http://{args.sender}/new_transaction", json={
