@@ -20,7 +20,7 @@ CORS(app)
 
 
 @app.route('/get_statistics', methods=['GET'])
-def add_node():
+def get_statistics():
     """Endpoint that provides statistics regarding this node and its
     blockchain (e.g. number of transactions in the blockchain, time needed to
     mine a block)
@@ -30,7 +30,8 @@ def add_node():
     """
     return jsonify({
         "number_of_transactions": this_node.blockchain.number_of_transactions,
-        "mining_times": this_node.mining_times
+        "mining_times": this_node.mining_times,
+        "number_of_blocks": len(this_node.blockchain.blockchain.keys())
         }), 200
 
 @app.route('/transactions', methods=['GET'])

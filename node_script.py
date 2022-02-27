@@ -1,4 +1,5 @@
 from ctypes import addressof
+import json
 import requests
 import sys
 from time import sleep, time
@@ -53,3 +54,13 @@ if __name__ == "__main__":
         sleep(0.5)
 
     print("Execution time:", time()-start_time)
+
+    print("Press ENTER when mining has finished.")
+    user_input = input()
+
+    print("Execution time (including mining):", time()-start_time)
+
+    r = requests.get(f"http://{addresses[from_wallet]}/get_statistics")
+    r = json.loads(r.content)
+    print(r)
+    print("Mining mean time:", sum(r["mining_times"])/len(r["mining_times"]))
