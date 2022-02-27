@@ -62,7 +62,7 @@ def non_bootstrap_node(node: Node, port: str):
         node (Node): The node to be initialized
         port (str): The port of the node
     """
-    requests.post(f"{addresses[0]}/add_node", json={
+    requests.post(f"http://{addresses[0]}/add_node", json={
         "index": node.index,
         "address": addresses[node.index],
         "public_key": addresses[node.index]
