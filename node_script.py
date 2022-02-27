@@ -1,7 +1,7 @@
 from ctypes import addressof
 import requests
 import sys
-from time import sleep
+from time import sleep, time
 
 
 # the addresses are hardcoded here because this script will only run in a
@@ -38,6 +38,8 @@ if __name__ == "__main__":
             amount = int(amount)
             transactions.append((from_wallet, to_wallet, amount))
 
+    start_time = time()
+
     for transaction in transactions:
         from_wallet, to_wallet, amount = transaction
 
@@ -49,3 +51,5 @@ if __name__ == "__main__":
         print(f"Sent request to {to_wallet} with amount = {amount}")
         print("Request content", r.content)
         sleep(0.5)
+
+    print("Execution time:", time()-start_time)

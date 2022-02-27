@@ -1,4 +1,5 @@
 import threading
+from time import time
 from typing import List
 
 from .block import Block
@@ -75,6 +76,7 @@ class Node:
         self.index = index
         self.wallet = self.create_wallet()
         self.ring = []
+        self.mining_times = []
 
     def set_ring(self, ring_nodes: List[RingNode]):
         """Set node's ring of node.
@@ -209,6 +211,7 @@ class Node:
                          block created and mined.
         """
         if len(self.blockchain.transactions) < self.blockchain.capacity:
+            self.blockchain.number_of_transactions += 1
             self.blockchain.transactions.append(transaction)
             return -1
 
@@ -219,6 +222,7 @@ class Node:
         block.add_transactions_to_block(added_transactions)
         self.blockchain.transactions = self.blockchain.\
                                 transactions[self.blockchain.capacity:]
+        self.blockchain.number_of_transactions += 1
         self.blockchain.transactions.append(transaction)
         nonce = self.mine_block(block, found_nonce)
         
@@ -235,9 +239,11 @@ class Node:
         Returns:
             nonce (int): The nonce found or -1 if the event is set.
         """
+        start_time = time()
         while not found_nonce.is_set():
             if block.hash[:self.blockchain.difficulty] ==\
-                "0" * self.blockchain.difficulty:
+                    "0" * self.blockchain.difficulty:
+                self.mining_times.append(time()-start_time)
                 self.blockchain.add_new_block(block)
                 return block.nonce
             block.set_nonce(block.nonce+1)

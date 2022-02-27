@@ -19,6 +19,20 @@ app = Flask(__name__)
 CORS(app)
 
 
+@app.route('/get_statistics', methods=['GET'])
+def add_node():
+    """Endpoint that provides statistics regarding this node and its
+    blockchain (e.g. number of transactions in the blockchain, time needed to
+    mine a block)
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    return jsonify({
+        "number_of_transactions": this_node.blockchain.number_of_transactions,
+        "mining_times": this_node.mining_times
+        }), 200
+
 @app.route('/transactions', methods=['GET'])
 def get_transactions():
     """Endpoint to get last valid block's transactions.

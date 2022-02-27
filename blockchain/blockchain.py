@@ -17,6 +17,7 @@ class Blockchain:
         self.blockchain = {}
         self.last_block = None
         self.transactions = []
+        self.number_of_transactions = 0
         self.capacity = capacity
         self.difficulty = difficulty
 
