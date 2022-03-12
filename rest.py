@@ -13,7 +13,7 @@ from cli_parser_args import add_arguments
 
 this_node = None
 number_nodes = None
-found_nonce_thread = threading.Event()
+found_nonce_thread = threading.Lock()
 
 app = Flask(__name__)
 CORS(app)
@@ -29,6 +29,7 @@ def get_statistics():
         Response, int: The response, along with the HTTP status
     """
     return jsonify({
+        "blockchain": this_node.blockchain.to_dict(),
         "number_of_transactions": this_node.blockchain.number_of_transactions,
         "mining_times": this_node.mining_times,
         "number_of_blocks": len(this_node.blockchain.blockchain.keys())
@@ -75,7 +76,9 @@ def add_transaction():
             if r.status_code != 200:
                 return jsonify({'error': 'Transaction not validated'}), 503
 
-    nonce = this_node.add_transaction(transaction, found_nonce_thread)
+    found_nonce_thread.acquire()
+    nonce = this_node.add_transaction(transaction)
+    found_nonce_thread.release()
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
@@ -103,7 +106,9 @@ def add_node():
                     [])
     this_node.register_node_to_ring(new_node)
     transaction = this_node.create_transaction(new_node.address, 100)
-    this_node.add_transaction(transaction, found_nonce_thread)
+    found_nonce_thread.acquire()
+    this_node.add_transaction(transaction)
+    found_nonce_thread.release()
 
     return jsonify({}), 200
 
@@ -166,8 +171,9 @@ def add_broadcasted_transaction():
     if not validated:
         return jsonify({'error': 'Transaction not valid'}), 502
 
-    nonce = this_node.add_transaction(broadcasted_transaction,\
-                                    found_nonce_thread)
+    found_nonce_thread.acquire()
+    nonce = this_node.add_transaction(broadcasted_transaction)
+    found_nonce_thread.release()
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
@@ -188,12 +194,12 @@ def found_nonce():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    found_nonce_thread.set()
     blockchain = Blockchain(0, 0)
     blockchain.parser(request.json["blockchain"])
+    found_nonce_thread.acquire()
     if len(this_node.blockchain.blockchain) < len(blockchain.blockchain):
-        this_node.blockchain = blockchain
-    found_nonce_thread.clear()
+        this_node.resolve_conflicts(blockchain)
+    found_nonce_thread.release()
     return jsonify({}), 200
 
 @app.route('/get_balance', methods=['GET'])

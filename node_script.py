@@ -51,7 +51,6 @@ if __name__ == "__main__":
 
         print(f"Sent request to {to_wallet} with amount = {amount}")
         print("Request content", r.content)
-        sleep(0.5)
 
     print("Execution time:", time()-start_time)
 
