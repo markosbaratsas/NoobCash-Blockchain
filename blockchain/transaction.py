@@ -144,7 +144,7 @@ class Transaction:
         # this is for the initial transaction of the genesis block of
         # the bootstrap node
         if not transaction_inputs:
-            sender_amount = self.amount
+            sender_amount = 0
         receiver_transaction_output = TransactionOutput(self.transaction_id, \
             self.receiver_address, self.amount)
         sender_transaction_output = TransactionOutput(self.transaction_id, \

@@ -6,7 +6,7 @@ import sys
 import threading
 from time import sleep
 
-from blockchain import Node, RingNode, Blockchain, Transaction
+from blockchain import Node, RingNode, Block, Blockchain, Transaction
 from helper import non_bootstrap_node, bootstrap_node, do_variable_checks
 from cli_parser_args import add_arguments
 
@@ -84,7 +84,8 @@ def add_transaction():
             if ring_node.index != this_node.index:
                 requests.post(f"http://{ring_node.address}/found_nonce",\
                     json={
-                        "blockchain": this_node.blockchain.to_dict()
+                        "last_block":
+                        this_node.blockchain.last_block.to_dict()
                     })
     return jsonify({}), 200
 
@@ -179,7 +180,8 @@ def add_broadcasted_transaction():
             if ring_node.index != this_node.index:
                 requests.post(f"http://{ring_node.address}/found_nonce",\
                     json={
-                        "blockchain": this_node.blockchain.to_dict()
+                        "last_block":
+                        this_node.blockchain.last_block.to_dict()
                     })
     return jsonify({}), 200
 
@@ -194,13 +196,56 @@ def found_nonce():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    blockchain = Blockchain(0, 0)
-    blockchain.parser(request.json["blockchain"])
-    found_nonce_thread.acquire()
-    if len(this_node.blockchain.blockchain) < len(blockchain.blockchain):
-        this_node.resolve_conflicts(blockchain)
-    found_nonce_thread.release()
+    block = Block(0, 0, "")
+    block.parser(request.json["last_block"])
+    if block.previous_hash != this_node.blockchain.last_block.hash:
+        longest_blockchain = len(this_node.blockchain.blockchain)
+        longest_blockchain_addr = ""
+        for ring_node in this_node.ring:
+            if ring_node.index != this_node.index:
+                r = requests.get(f"http://{ring_node.address}/blockchain_len")
+                r = r.json
+                if int(r["blockchain_len"]) > longest_blockchain:
+                    longest_blockchain = r.json["blockchain_len"]
+                    longest_blockchain_addr = ring_node.address
+
+        if longest_blockchain_addr != "":
+            r = requests.get(f"http://{longest_blockchain_addr}/blockchain")
+
+            blockchain = Blockchain(0, 0)
+            blockchain.parser(r.json["blockchain"])
+
+            found_nonce_thread.acquire()
+            this_node.resolve_conflicts(blockchain)
+            found_nonce_thread.release()
+
+    else:
+        found_nonce_thread.acquire()
+        this_node.blockchain.add_new_block(block)
+        found_nonce_thread.release()
     return jsonify({}), 200
+
+@app.route('/blockchain_len', methods=['GET'])
+def blockchain_len():
+    """Return length of current node's blockchain
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    return jsonify({"blockchain_len":
+                    len(this_node.blockchain.blockchain)
+                    }), 200
+
+@app.route('/blockchain', methods=['GET'])
+def blockchain():
+    """Return current node's blockchain
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    return jsonify({"blockchain":
+                    this_node.blockchain.to_dict()
+                    }), 200
 
 @app.route('/get_balance', methods=['GET'])
 def get_balance():
