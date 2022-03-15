@@ -1,8 +1,8 @@
 import argparse
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+import json
 import requests
-import sys
 import threading
 from time import sleep
 
@@ -14,6 +14,9 @@ from cli_parser_args import add_arguments
 this_node = None
 number_nodes = None
 found_nonce_thread = threading.Lock()
+
+with open('addresses.json') as json_file:
+    addresses = json.load(json_file)
 
 app = Flask(__name__)
 CORS(app)
@@ -206,7 +209,7 @@ def found_nonce():
                 r = requests.get(f"http://{ring_node.address}/blockchain_len")
                 r = r.json
                 if int(r["blockchain_len"]) > longest_blockchain:
-                    longest_blockchain = r.json["blockchain_len"]
+                    longest_blockchain = int(r.json["blockchain_len"])
                     longest_blockchain_addr = ring_node.address
 
         if longest_blockchain_addr != "":
@@ -283,7 +286,7 @@ if __name__ == '__main__':
             bootstrap_node(this_node, number_nodes)
             port = 5000
 
-        app.run(host='0.0.0.0', port=port, threaded=True)
+        app.run(host=addresses['host'], port=port, threaded=True)
 
     elif args.which == "transaction":
         r = requests.post(f"http://{args.sender}/new_transaction", json={
@@ -301,5 +304,5 @@ if __name__ == '__main__':
         print(r.content)
 
     elif args.which == "broadcast_nodes":
-        r = requests.get(f"http://127.0.0.1:5000/broadcast_nodes")
+        r = requests.get(f"{addresses['0']}/broadcast_nodes")
         print(r.content)

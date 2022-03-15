@@ -5,15 +5,9 @@ import sys
 from time import sleep, time
 
 
-# the addresses are hardcoded here because this script will only run in a
-# specific network with those addresses
-addresses = {
-    0: "192.168.0.2:5000",
-    1: "192.168.0.3:5000",
-    2: "192.168.0.4:5000",
-    3: "192.168.0.5:5000",
-    4: "192.168.0.1:5000"
-}
+with open('addresses.json') as json_file:
+    addresses = json.load(json_file)
+
 
 if __name__ == "__main__":
     """This script will be executed in each one of the nodes. It executes the
@@ -44,8 +38,9 @@ if __name__ == "__main__":
     for transaction in transactions:
         from_wallet, to_wallet, amount = transaction
 
-        r = requests.post(f"http://{addresses[from_wallet]}/new_transaction", json={
-            "receiver": addresses[to_wallet],
+        r = requests.post(\
+            f"http://{addresses[str(from_wallet)]}/new_transaction", json={
+            "receiver": addresses[str(to_wallet)],
             "amount": amount
         })
 
@@ -59,7 +54,7 @@ if __name__ == "__main__":
 
     print("Execution time (including mining):", time()-start_time)
 
-    r = requests.get(f"http://{addresses[from_wallet]}/get_statistics")
+    r = requests.get(f"http://{addresses[str(from_wallet)]}/get_statistics")
     r = json.loads(r.content)
     print(r)
     print("Mining mean time:", sum(r["mining_times"])/len(r["mining_times"]))
