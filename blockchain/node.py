@@ -261,6 +261,7 @@ class Node:
     def resolve_conflicts(self, blockchain: Blockchain) -> None:
         """Validate that the blockchain that we received is valid and resolve
         conflicts between transactions of the 2 blockchains.
+        In this function we make sure that each unique transaction exists once.
         IMPORTANT NOTE: This part is considered a critical section... Before
         calling this function, lock should be acquired.
 
@@ -276,12 +277,43 @@ class Node:
         for trans in blockchain.transactions:
             transactions_set.add(trans.transaction_id)
 
-        for trans in self.blockchain.transactions:
+        for hash, block in blockchain.blockchain.items():
+            for trans in block.list_of_transactions:
+                transactions_set.add(trans.transaction_id)
+
+        old_transactions = self.blockchain.transactions
+        self.blockchain = blockchain
+        for trans in old_transactions:
             if (trans.transaction_id not in transactions_set
                     and self.validate_transaction(trans)):
-                blockchain.add_transaction(trans)
+                self.add_transaction(trans)
 
-        self.blockchain = blockchain
+    def delete_duplicate_transactions(self, block: Block) -> None:
+        """When adding a new block that another node sent you, it is possible
+        that inside the block exist some transactions that also exist in
+        `Blockchain.transactions` list. We should delete those transactions
+        from `Blockchain.transactions` since they will be added to the
+        blockchain via the broadcasted block.
+
+        Args:
+            block (Block): The new block that was broadcasted
+        """
+        added_transactions = set()
+        for trans in block.list_of_transactions:
+            added_transactions.add(trans.transaction_id)
+        
+        count = len(added_transactions)
+
+        new_transactions = []
+        for trans in self.blockchain.transactions:
+            if trans.transaction_id not in added_transactions:
+                new_transactions.append(trans)
+            else:
+                count -= 1
+        
+        self.blockchain.number_of_transactions += count
+        self.blockchain.transactions = new_transactions
+
 
     # def broadcast_transaction(self):
     #     pass

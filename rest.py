@@ -13,6 +13,8 @@ from cli_parser_args import add_arguments
 
 this_node = None
 number_nodes = None
+
+# Used when critical section is accessed
 found_nonce_thread = threading.Lock()
 
 with open('addresses.json') as json_file:
@@ -201,31 +203,32 @@ def found_nonce():
     """
     block = Block(0, 0, "")
     block.parser(request.json["last_block"])
+    found_nonce_thread.acquire()
     if block.previous_hash != this_node.blockchain.last_block.hash:
         longest_blockchain = len(this_node.blockchain.blockchain)
         longest_blockchain_addr = ""
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
                 r = requests.get(f"http://{ring_node.address}/blockchain_len")
-                r = r.json
+                r = r.json()
                 if int(r["blockchain_len"]) > longest_blockchain:
-                    longest_blockchain = int(r.json["blockchain_len"])
+                    longest_blockchain = int(r["blockchain_len"])
                     longest_blockchain_addr = ring_node.address
 
         if longest_blockchain_addr != "":
             r = requests.get(f"http://{longest_blockchain_addr}/blockchain")
 
             blockchain = Blockchain(0, 0)
-            blockchain.parser(r.json["blockchain"])
+            r = r.json()
+            blockchain.parser(r["blockchain"])
 
-            found_nonce_thread.acquire()
             this_node.resolve_conflicts(blockchain)
-            found_nonce_thread.release()
 
     else:
-        found_nonce_thread.acquire()
+        this_node.delete_duplicate_transactions(block)
         this_node.blockchain.add_new_block(block)
-        found_nonce_thread.release()
+
+    found_nonce_thread.release()
     return jsonify({}), 200
 
 @app.route('/blockchain_len', methods=['GET'])
@@ -304,5 +307,5 @@ if __name__ == '__main__':
         print(r.content)
 
     elif args.which == "broadcast_nodes":
-        r = requests.get(f"{addresses['0']}/broadcast_nodes")
+        r = requests.get(f"http://{addresses['0']}/broadcast_nodes")
         print(r.content)
