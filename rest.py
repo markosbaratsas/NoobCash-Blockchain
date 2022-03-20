@@ -33,8 +33,11 @@ def get_statistics():
     Returns:
         Response, int: The response, along with the HTTP status
     """
+    found_nonce_thread.acquire()
+    blockchain = this_node.blockchain.to_dict()
+    found_nonce_thread.release()
     return jsonify({
-        "blockchain": this_node.blockchain.to_dict(),
+        "blockchain": blockchain,
         "number_of_transactions": this_node.blockchain.number_of_transactions,
         "mining_times": this_node.mining_times,
         "number_of_blocks": len(this_node.blockchain.blockchain.keys())
@@ -151,10 +154,13 @@ def broadcast_nodes():
     if len(this_node.ring) == number_nodes:
         for node in this_node.ring:
             if node.index != this_node.index:
+                found_nonce_thread.acquire()
+                blockchain = this_node.blockchain.to_dict()
+                found_nonce_thread.release()
                 requests.post(f"http://{node.address}" +
                     "/receive_blockchain_and_ring",
                     json={
-                        "blockchain": this_node.blockchain.to_dict(),
+                        "blockchain": blockchain,
                         "ring": [x.to_dict() for x in this_node.ring]
                     })
 
@@ -249,9 +255,10 @@ def blockchain():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    return jsonify({"blockchain":
-                    this_node.blockchain.to_dict()
-                    }), 200
+    found_nonce_thread.acquire()
+    blockchain = this_node.blockchain.to_dict()
+    found_nonce_thread.release()
+    return jsonify({"blockchain": blockchain}), 200
 
 @app.route('/get_balance', methods=['GET'])
 def get_balance():
