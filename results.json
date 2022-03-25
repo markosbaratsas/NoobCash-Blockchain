@@ -1,0 +1,98 @@
+{
+    "5_nodes_4_difficulty_10_capacity": {
+        "mean_mining_time": 1.977994,
+        "number_of_block": 48,
+        "number_of_transactions": 482,
+        "execution_time": 362.09,
+        "throughput": 1.3312,
+        "block_time": 7.54354166667
+    },
+    "5_nodes_4_difficulty_5_capacity": {
+        "mean_mining_time": 1.37524,
+        "number_of_block": 97,
+        "number_of_transactions": 488,
+        "execution_time": 534.88,
+        "throughput": 0.9124,
+        "block_time": 5.51422680412
+    },
+    "5_nodes_4_difficulty_1_capacity": {
+        "mean_mining_time": 0.9668,
+        "number_of_block": 473,
+        "number_of_transactions": 474,
+        "execution_time": 1550.13,
+        "throughput": 0.306,
+        "block_time": 3.27723044397
+    },
+    "5_nodes_5_difficulty_10_capacity": {
+        "mean_mining_time": 27.81,
+        "number_of_block": 47,
+        "number_of_transactions": 472,
+        "execution_time": 4909.99,
+        "throughput": 0.096,
+        "block_time": 104.46787234
+    },
+    "5_nodes_5_difficulty_5_capacity": {
+        "mean_mining_time": 20.615,
+        "number_of_block": 97,
+        "number_of_transactions": 488,
+        "execution_time": 6963.94,
+        "throughput": 0.07,
+        "block_time": 71.7931958763
+    },
+    "5_nodes_5_difficulty_1_capacity": {
+        "mean_mining_time": 14.65,
+        "number_of_block": 481,
+        "number_of_transactions": 482,
+        "execution_time": 19701.65,
+        "throughput": 0.025,
+        "block_time": 40.9597713098
+    },
+    "10_nodes_4_difficulty_10_capacity": {
+        "mean_mining_time": 1.9321333,
+        "number_of_block": 99,
+        "number_of_transactions": 1000,
+        "execution_time": 1370.557801246643,
+        "throughput": 0.729,
+        "block_time": 13.8440181944
+    },
+    "10_nodes_4_difficulty_5_capacity": {
+        "mean_mining_time": 1.41578,
+        "number_of_block": 196,
+        "number_of_transactions": 981,
+        "execution_time": 2063.934319496155,
+        "throughput": 0.475,
+        "block_time": 10.5302771403
+    },
+    "10_nodes_4_difficulty_1_capacity": {
+        "mean_mining_time": 1.004,
+        "number_of_block": 983,
+        "number_of_transactions": 984,
+        "execution_time": 8230.425755023956,
+        "throughput": 0.119,
+        "block_time": 8.37276272129
+    },
+    "10_nodes_5_difficulty_10_capacity": {
+        "mean_mining_time": 26.01401,
+        "number_of_block": 97,
+        "number_of_transactions": 977,
+        "execution_time": 16635.674412727356,
+        "throughput": 0.058,
+        "block_time": 171.501798069
+    },
+    "10_nodes_5_difficulty_5_capacity": {
+        "mean_mining_time": 20.3742,
+        "number_of_block": 195,
+        "number_of_transactions": 977,
+        "execution_time": 23167.905998706818,
+        "throughput": 0.042,
+        "block_time": 118.809774352
+    },
+    "10_nodes_5_difficulty_1_capacity": {
+        "mean_mining_time": 15.30932,
+        "number_of_block": 996,
+        "number_of_transactions": 997,
+        "execution_time": 67287.6094801426,
+        "throughput": 0.014,
+        "block_time": 67.5578408435
+    }
+}
