@@ -1,23 +1,47 @@
 import argparse
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+import json
 import requests
-import sys
 import threading
 from time import sleep
 
-from blockchain import Node, RingNode, Blockchain, Transaction
+from blockchain import Node, RingNode, Block, Blockchain, Transaction
 from helper import non_bootstrap_node, bootstrap_node, do_variable_checks
 from cli_parser_args import add_arguments
 
 
 this_node = None
 number_nodes = None
-found_nonce_thread = threading.Event()
+
+# Used when critical section is accessed
+found_nonce_thread = threading.Lock()
+
+with open('addresses.json') as json_file:
+    addresses = json.load(json_file)
 
 app = Flask(__name__)
 CORS(app)
 
+
+@app.route('/get_statistics', methods=['GET'])
+def get_statistics():
+    """Endpoint that provides statistics regarding this node and its
+    blockchain (e.g. number of transactions in the blockchain, time needed to
+    mine a block)
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    found_nonce_thread.acquire()
+    blockchain = this_node.blockchain.to_dict()
+    found_nonce_thread.release()
+    return jsonify({
+        "blockchain": blockchain,
+        "number_of_transactions": this_node.blockchain.number_of_transactions,
+        "mining_times": this_node.mining_times,
+        "number_of_blocks": len(this_node.blockchain.blockchain.keys())
+        }), 200
 
 @app.route('/transactions', methods=['GET'])
 def get_transactions():
@@ -60,13 +84,16 @@ def add_transaction():
             if r.status_code != 200:
                 return jsonify({'error': 'Transaction not validated'}), 503
 
-    nonce = this_node.add_transaction(transaction, found_nonce_thread)
+    found_nonce_thread.acquire()
+    nonce = this_node.add_transaction(transaction)
+    found_nonce_thread.release()
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
                 requests.post(f"http://{ring_node.address}/found_nonce",\
                     json={
-                        "blockchain": this_node.blockchain.to_dict()
+                        "last_block":
+                        this_node.blockchain.last_block.to_dict()
                     })
     return jsonify({}), 200
 
@@ -88,7 +115,9 @@ def add_node():
                     [])
     this_node.register_node_to_ring(new_node)
     transaction = this_node.create_transaction(new_node.address, 100)
-    this_node.add_transaction(transaction, found_nonce_thread)
+    found_nonce_thread.acquire()
+    this_node.add_transaction(transaction)
+    found_nonce_thread.release()
 
     return jsonify({}), 200
 
@@ -125,10 +154,13 @@ def broadcast_nodes():
     if len(this_node.ring) == number_nodes:
         for node in this_node.ring:
             if node.index != this_node.index:
+                found_nonce_thread.acquire()
+                blockchain = this_node.blockchain.to_dict()
+                found_nonce_thread.release()
                 requests.post(f"http://{node.address}" +
                     "/receive_blockchain_and_ring",
                     json={
-                        "blockchain": this_node.blockchain.to_dict(),
+                        "blockchain": blockchain,
                         "ring": [x.to_dict() for x in this_node.ring]
                     })
 
@@ -151,14 +183,16 @@ def add_broadcasted_transaction():
     if not validated:
         return jsonify({'error': 'Transaction not valid'}), 502
 
-    nonce = this_node.add_transaction(broadcasted_transaction,\
-                                    found_nonce_thread)
+    found_nonce_thread.acquire()
+    nonce = this_node.add_transaction(broadcasted_transaction)
+    found_nonce_thread.release()
     if nonce != -1:
         for ring_node in this_node.ring:
             if ring_node.index != this_node.index:
                 requests.post(f"http://{ring_node.address}/found_nonce",\
                     json={
-                        "blockchain": this_node.blockchain
+                        "last_block":
+                        this_node.blockchain.last_block.to_dict()
                     })
     return jsonify({}), 200
 
@@ -173,13 +207,58 @@ def found_nonce():
     Returns:
         Response, int: The response, along with the HTTP status
     """
-    found_nonce_thread.set()
-    blockchain = Blockchain(0, 0)
-    blockchain.parser(request.json["blockchain"])
-    if len(this_node.blockchain.blockchain) < len(blockchain.blockchain):
-        this_node.blockchain = blockchain
-    found_nonce_thread.clear()
+    block = Block(0, 0, "")
+    block.parser(request.json["last_block"])
+    found_nonce_thread.acquire()
+    if block.previous_hash != this_node.blockchain.last_block.hash:
+        longest_blockchain = len(this_node.blockchain.blockchain)
+        longest_blockchain_addr = ""
+        for ring_node in this_node.ring:
+            if ring_node.index != this_node.index:
+                r = requests.get(f"http://{ring_node.address}/blockchain_len")
+                r = r.json()
+                if int(r["blockchain_len"]) > longest_blockchain:
+                    longest_blockchain = int(r["blockchain_len"])
+                    longest_blockchain_addr = ring_node.address
+
+        if longest_blockchain_addr != "":
+            r = requests.get(f"http://{longest_blockchain_addr}/blockchain")
+
+            blockchain = Blockchain(0, 0)
+            r = r.json()
+            blockchain.parser(r["blockchain"])
+
+            this_node.resolve_conflicts(blockchain)
+
+    else:
+        this_node.delete_duplicate_transactions(block)
+        this_node.blockchain.add_new_block(block)
+
+    found_nonce_thread.release()
     return jsonify({}), 200
+
+@app.route('/blockchain_len', methods=['GET'])
+def blockchain_len():
+    """Return length of current node's blockchain
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    return jsonify({"blockchain_len":
+                    len(this_node.blockchain.blockchain)
+                    }), 200
+
+@app.route('/blockchain', methods=['GET'])
+def blockchain():
+    """Return current node's blockchain
+
+    Returns:
+        Response, int: The response, along with the HTTP status
+    """
+    found_nonce_thread.acquire()
+    blockchain = this_node.blockchain.to_dict()
+    found_nonce_thread.release()
+    return jsonify({"blockchain": blockchain}), 200
 
 @app.route('/get_balance', methods=['GET'])
 def get_balance():
@@ -217,7 +296,7 @@ if __name__ == '__main__':
             bootstrap_node(this_node, number_nodes)
             port = 5000
 
-        app.run(host='127.0.0.1', port=port, threaded=True)
+        app.run(host=addresses['host'], port=port, threaded=True)
 
     elif args.which == "transaction":
         r = requests.post(f"http://{args.sender}/new_transaction", json={
@@ -235,5 +314,5 @@ if __name__ == '__main__':
         print(r.content)
 
     elif args.which == "broadcast_nodes":
-        r = requests.get(f"http://127.0.0.1:5000/broadcast_nodes")
+        r = requests.get(f"http://{addresses['0']}/broadcast_nodes")
         print(r.content)

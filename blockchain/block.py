@@ -103,3 +103,14 @@ class Block:
         self.nonce = dictionary["nonce"]
         self.previous_hash = dictionary["previous_hash"]
         self.hash = dictionary["hash"]
+
+    def validate_block(self, hash: str) -> bool:
+        """Check that the the actual block hash is equal with the given one
+
+        Args:
+            hash (str): The given hash
+
+        Returns:
+            bool: True if hash is correct else False
+        """
+        return hash == self.__my_hash

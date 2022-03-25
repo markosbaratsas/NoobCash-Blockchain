@@ -17,6 +17,7 @@ class Blockchain:
         self.blockchain = {}
         self.last_block = None
         self.transactions = []
+        self.number_of_transactions = 0
         self.capacity = capacity
         self.difficulty = difficulty
 
@@ -54,6 +55,7 @@ class Blockchain:
             "blockchain": blockchain_to_dict,
             "last_block": self.last_block.to_dict(),
             "transactions": [x.to_dict() for x in self.transactions],
+            "number_of_transactions": self.number_of_transactions,
             "capacity": self.capacity,
             "difficulty": self.difficulty
         }
@@ -74,13 +76,14 @@ class Blockchain:
         last_block.parser(dictionary["last_block"])
 
         blockchain = {}
-        for hash, block in self.blockchain.items():
+        for hash, block in dictionary["blockchain"].items():
             new_block = Block(0, 0, "")
             new_block.parser(block)
             blockchain[hash] = new_block
 
         self.capacity = dictionary["capacity"]
         self.difficulty = dictionary["difficulty"]
-        self.transaction = transaction
+        self.transactions = transactions
+        self.number_of_transactions = dictionary["number_of_transactions"]
         self.last_block = last_block
         self.blockchain = blockchain

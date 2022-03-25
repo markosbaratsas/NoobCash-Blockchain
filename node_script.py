@@ -1,18 +1,13 @@
 from ctypes import addressof
+import json
 import requests
 import sys
-from time import sleep
+from time import sleep, time
 
 
-# the addresses are hardcoded here because this script will only run in a
-# specific network with those addresses
-addresses = {
-    0: "192.168.0.2:8000",
-    1: "192.168.0.3:8000",
-    2: "192.168.0.4:8000",
-    3: "192.168.0.5:8000",
-    4: "192.168.0.1:8000"
-}
+with open('addresses.json') as json_file:
+    addresses = json.load(json_file)
+
 
 if __name__ == "__main__":
     """This script will be executed in each one of the nodes. It executes the
@@ -38,14 +33,28 @@ if __name__ == "__main__":
             amount = int(amount)
             transactions.append((from_wallet, to_wallet, amount))
 
+    start_time = time()
+
     for transaction in transactions:
         from_wallet, to_wallet, amount = transaction
 
-        r = requests.post(f"http://{addresses[to_wallet]}/new_transaction", json={
-            "receiver": addresses[from_wallet],
+        r = requests.post(\
+            f"http://{addresses[str(from_wallet)]}/new_transaction", json={
+            "receiver": addresses[str(to_wallet)],
             "amount": amount
         })
 
         print(f"Sent request to {to_wallet} with amount = {amount}")
         print("Request content", r.content)
-        sleep(0.5)
+
+    print("Execution time:", time()-start_time)
+
+    print("Press ENTER when mining has finished.")
+    user_input = input()
+
+    print("Execution time (including mining):", time()-start_time)
+
+    r = requests.get(f"http://{addresses[str(from_wallet)]}/get_statistics")
+    r = json.loads(r.content)
+    print(r)
+    print("Mining mean time:", sum(r["mining_times"])/len(r["mining_times"]))
